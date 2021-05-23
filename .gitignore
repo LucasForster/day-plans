@@ -1,1 +1,8 @@
+# Project
+/verkehrsfluss
+
+# Rust
 /target
+
+# MacOS
+.DS_Store
