@@ -1,8 +1,7 @@
 use std::convert::TryInto;
-use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 
+mod io;
 
 fn main() {
     for district in load_districts().iter() {
@@ -19,7 +18,7 @@ struct District {
 
 fn load_districts() -> [District; DISTRICT_COUNT] {
     let path = Path::new("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat");
-    let data = read_ascii_file(&path);
+    let data = io::read_ascii_file(&path);
     let mut reader = csv::ReaderBuilder::new()
         .has_headers(false)
         .delimiter(b'\t')
@@ -32,11 +31,4 @@ fn load_districts() -> [District; DISTRICT_COUNT] {
         });
     }
     districts.try_into().unwrap()
-}
-
-fn read_ascii_file(path: &Path) -> String {
-    let mut file = File::open(&path).unwrap();
-    let mut data = Vec::new();
-    file.read_to_end(&mut data).unwrap();
-    String::from_utf8_lossy(&data).to_string()
 }
