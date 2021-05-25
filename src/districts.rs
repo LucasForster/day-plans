@@ -1,30 +1,39 @@
-use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::Path;
+use std::sync::Once;
 
 use super::io;
 
 
-type Id = usize;
-#[derive(Debug)]
-pub struct Index(usize);
-
 const COUNT: usize = 647;
+
+
+#[derive(Debug)]
+pub struct Id(usize);
 
 #[derive(Debug)]
 pub struct District {
-    x: f64,
-    y: f64,
+    pub id: Id,
+    pub x: f64,
+    pub y: f64,
     pub info: String,
 }
 
 #[derive(Debug)]
 pub struct Districts {
     districts: [District; COUNT],
-    map: HashMap<Id, Index>,
 }
 
-pub fn load() -> Districts {
+
+const LOAD: Once = Once::new();
+pub fn load() -> Option<Districts> {
+    let mut districts = None;
+    LOAD.call_once(|| {
+        districts = Some(load_file())
+    });
+    districts
+}
+fn load_file() -> Districts {
     let path = Path::new("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat");
     let data = io::read_ascii_file(&path);
     let mut reader = csv::ReaderBuilder::new()
@@ -32,11 +41,10 @@ pub fn load() -> Districts {
         .delimiter(b'\t')
         .from_reader(data.as_bytes());
     let mut districts: Vec<District> = Vec::new();
-    let mut map: HashMap<Id, Index> = HashMap::new();
     for result in reader.records() {
         let record = result.unwrap();
-        map.insert(record[0].parse().unwrap(), Index(districts.len()));
         districts.push(District {
+            id: Id(record[0].parse().unwrap()),
             x: record[1].parse().unwrap(),
             y: record[2].parse().unwrap(),
             // full concat: (&record.as_slice()[record.range(3).unwrap().start..]).to_string()
@@ -45,6 +53,5 @@ pub fn load() -> Districts {
     }
     Districts {
         districts: districts.try_into().unwrap(),
-        map,
     }
 }
