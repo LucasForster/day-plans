@@ -15,6 +15,7 @@ const COUNT: usize = 647;
 pub struct District {
     x: f64,
     y: f64,
+    pub info: String,
 }
 
 #[derive(Debug)]
@@ -38,6 +39,8 @@ pub fn load() -> Districts {
         districts.push(District {
             x: record[1].parse().unwrap(),
             y: record[2].parse().unwrap(),
+            // full concat: (&record.as_slice()[record.range(3).unwrap().start..]).to_string()
+            info: if record[3].eq(&record[5]) {record[3].to_string()} else {format!("{} ({})", &record[3], &record[5])},
         });
     }
     Districts {
