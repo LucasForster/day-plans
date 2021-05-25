@@ -26,6 +26,20 @@ pub struct Districts {
     districts: [District; COUNT],
     map: HashMap<Id, usize>,
 }
+impl Districts {
+    pub fn id(&self, number: usize) -> Option<Id> {
+        let id = Id(number);
+        if self.map.contains_key(&id) {
+            Some(id)
+        } else {
+            None
+        }
+    }
+    pub fn get(&self, id: Id) -> &District {
+        let index = self.map.get(&id).unwrap();
+        &self.districts[*index]
+    }
+}
 
 
 const LOAD: Once = Once::new();
