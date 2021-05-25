@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 csv = "1.1.6"
+proj = "0.22.0"
