@@ -3,14 +3,18 @@ use std::path::Path;
 
 use super::io;
 
-const DISTRICT_COUNT: usize = 647;
+const COUNT: usize = 647;
 
 #[derive(Debug)]
 pub struct District {
     id: u16,
 }
 
-pub fn load() -> [District; DISTRICT_COUNT] {
+pub struct Districts {
+    districts: [District; COUNT],
+}
+
+pub fn load() -> Districts {
     let path = Path::new("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat");
     let data = io::read_ascii_file(&path);
     let mut reader = csv::ReaderBuilder::new()
@@ -24,5 +28,7 @@ pub fn load() -> [District; DISTRICT_COUNT] {
             id: record[0].parse().unwrap(),
         });
     }
-    districts.try_into().unwrap()
+    Districts {
+        districts: districts.try_into().unwrap(),
+    }
 }
