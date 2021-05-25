@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::convert::TryInto;
 use std::path::Path;
 use std::sync::Once;
@@ -8,8 +9,9 @@ use super::io;
 const COUNT: usize = 647;
 
 
-#[derive(Debug)]
+#[derive(Debug, Hash, PartialEq, Clone, Copy)]
 pub struct Id(usize);
+impl Eq for Id {}
 
 #[derive(Debug)]
 pub struct District {
@@ -22,6 +24,7 @@ pub struct District {
 #[derive(Debug)]
 pub struct Districts {
     districts: [District; COUNT],
+    map: HashMap<Id, usize>,
 }
 
 
@@ -51,7 +54,12 @@ fn load_file() -> Districts {
             info: if record[3].eq(&record[5]) {record[3].to_string()} else {format!("{} ({})", &record[3], &record[5])},
         });
     }
+    let mut map: HashMap<Id, usize> = HashMap::new();
+    for i in 0..districts.len() { // TODO: get iter with index from Vec
+        map.insert(districts[i].id, i);
+    }
     Districts {
         districts: districts.try_into().unwrap(),
+        map,
     }
 }
