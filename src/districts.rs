@@ -9,9 +9,7 @@ use super::io;
 const COUNT: usize = 647;
 
 
-#[derive(Debug, Hash, PartialEq, Clone, Copy)]
-pub struct Id(usize);
-impl Eq for Id {}
+type Id = usize;
 
 #[derive(Debug)]
 pub struct District {
@@ -27,17 +25,11 @@ pub struct Districts {
     map: HashMap<Id, usize>,
 }
 impl Districts {
-    pub fn id(&self, number: usize) -> Option<Id> {
-        let id = Id(number);
-        if self.map.contains_key(&id) {
-            Some(id)
-        } else {
-            None
+    pub fn get(&self, id: Id) -> Option<&District> {
+        match self.map.get(&id) {
+            Some(&index) => Some(&self.districts[index]),
+            None => None,
         }
-    }
-    pub fn get(&self, id: Id) -> &District {
-        let index = self.map.get(&id).unwrap();
-        &self.districts[*index]
     }
 }
 
@@ -61,7 +53,7 @@ fn load_file() -> Districts {
     for result in reader.records() {
         let record = result.unwrap();
         districts.push(District {
-            id: Id(record[0].parse().unwrap()),
+            id: record[0].parse().unwrap(),
             x: record[1].parse().unwrap(),
             y: record[2].parse().unwrap(),
             // full concat: (&record.as_slice()[record.range(3).unwrap().start..]).to_string()
