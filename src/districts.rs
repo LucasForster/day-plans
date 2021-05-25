@@ -3,6 +3,8 @@ use std::convert::TryInto;
 use std::path::Path;
 use std::sync::Once;
 
+use proj::Proj;
+
 use super::io;
 
 
@@ -49,13 +51,15 @@ fn load_file() -> Districts {
         .has_headers(false)
         .delimiter(b'\t')
         .from_reader(data.as_bytes());
+    let proj = Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
     let mut districts: Vec<District> = Vec::new();
     for result in reader.records() {
         let record = result.unwrap();
+        let (x, y) = proj.convert((record[1].parse().unwrap(), record[2].parse().unwrap())).unwrap();
         districts.push(District {
             id: record[0].parse().unwrap(),
-            x: record[1].parse().unwrap(),
-            y: record[2].parse().unwrap(),
+            x,
+            y,
             // full concat: (&record.as_slice()[record.range(3).unwrap().start..]).to_string()
             info: if record[3].eq(&record[5]) {record[3].to_string()} else {format!("{} ({})", &record[3], &record[5])},
         });
