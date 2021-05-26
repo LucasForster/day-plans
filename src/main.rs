@@ -1,6 +1,8 @@
 mod districts;
 mod io;
+mod purposes;
 
 fn main() {
-    districts::load();
+    println!("{:?}", districts::load().unwrap());
+    println!("{:?}", purposes::load().unwrap());
 }
