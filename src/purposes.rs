@@ -70,7 +70,7 @@ pub fn load() -> Option<Categories> {
     districts
 }
 fn load_file() -> Categories {
-    let records = io::read_csv("verkehrsfluss/verkehrsflussdaten/categoryInformation.txt", false, false, b';');
+    let records = io::read_csv("verkehrsfluss/verkehrsflussdaten/categoryInformation.txt", false, false, b';', None);
     let mut categories: Vec<Category> = Vec::new();
     for record in records {
         let split = record[2].split("->").collect::<Vec<&str>>();

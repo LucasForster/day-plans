@@ -44,7 +44,7 @@ pub fn load() -> Option<Districts> {
     districts
 }
 fn load_file() -> Districts {
-    let records = io::read_csv("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat", true, false, b'\t');
+    let records = io::read_csv("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat", true, false, b'\t', None);
     let proj = Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
     let mut districts: Vec<District> = Vec::new();
     for record in records {

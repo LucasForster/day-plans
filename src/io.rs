@@ -6,7 +6,7 @@ use std::path::Path;
 use csv::{ReaderBuilder, StringRecord};
 
 
-pub fn read_csv<S: AsRef<OsStr>>(path: S, is_ascii: bool, has_headers: bool, delimiter: u8) -> Vec<StringRecord> {
+pub fn read_csv<S: AsRef<OsStr>>(path: S, is_ascii: bool, has_headers: bool, delimiter: u8, comment: Option<u8>) -> Vec<StringRecord> {
     let data = if is_ascii {
         read_ascii_file(&Path::new(&path))
     } else {
@@ -16,6 +16,7 @@ pub fn read_csv<S: AsRef<OsStr>>(path: S, is_ascii: bool, has_headers: bool, del
         .has_headers(has_headers)
         .flexible(true)
         .delimiter(delimiter)
+        .comment(comment)
         .from_reader(data.as_bytes());
     reader.records().map(|result| result.unwrap()).collect()
 }
