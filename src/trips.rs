@@ -53,13 +53,16 @@ fn load_file<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Tr
             let path = format!("verkehrsfluss/verkehrsflussdaten/{} ascii.{:03}", transport.to_str(), category.id);
             let records = io::read_csv(path, true, false, b' ', Some(b'C'));
             for record in records {
-                let count: f64 = record[2].parse().unwrap();
+                let count = record[2].parse::<f64>().unwrap().round() as TripCount;
+                if count == 0 {
+                    continue;
+                }
                 trips.push(Trip {
                     transport,
                     category,
                     origin: districts.get(record[0].parse().unwrap()).unwrap(),
                     destination: districts.get(record[1].parse().unwrap()).unwrap(),
-                    count: count.round() as TripCount,
+                    count,
                 });
             }
         }
