@@ -60,7 +60,7 @@ impl Categories {
             None => None,
         }
     }
-    pub fn iter(&self) -> Iter<'_, Category> {
+    pub fn iter<'c>(&'c self) -> Iter<'c, Category> {
         self.categories.iter()
     }
 }
