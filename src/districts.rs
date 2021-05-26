@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::path::Path;
 use std::sync::Once;
 
 use proj::Proj;
@@ -45,16 +44,10 @@ pub fn load() -> Option<Districts> {
     districts
 }
 fn load_file() -> Districts {
-    let path = Path::new("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat");
-    let data = io::read_ascii_file(&path);
-    let mut reader = csv::ReaderBuilder::new()
-        .has_headers(false)
-        .delimiter(b'\t')
-        .from_reader(data.as_bytes());
+    let records = io::read_csv("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat", false, b'\t');
     let proj = Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
     let mut districts: Vec<District> = Vec::new();
-    for result in reader.records() {
-        let record = result.unwrap();
+    for record in records {
         let (x, y) = proj.convert((record[1].parse().unwrap(), record[2].parse().unwrap())).unwrap();
         districts.push(District {
             id: record[0].parse().unwrap(),
