@@ -43,9 +43,9 @@ impl Purpose {
 
 #[derive(Debug)]
 pub struct Category {
-    id: Id,
-    origin: Purpose,
-    destination: Purpose,
+    pub id: Id,
+    pub origin: Purpose,
+    pub destination: Purpose,
 }
 
 #[derive(Debug)]
