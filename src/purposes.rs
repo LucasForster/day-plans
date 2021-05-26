@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::slice::Iter;
 use std::sync::Once;
 
 use super::io;
@@ -58,6 +59,9 @@ impl Categories {
             Some(&index) => Some(&self.categories[index]),
             None => None,
         }
+    }
+    pub fn iter(&self) -> Iter<'_, Category> {
+        self.categories.iter()
     }
 }
 
