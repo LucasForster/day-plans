@@ -1,5 +1,6 @@
 mod districts;
 mod io;
+mod mode;
 mod purposes;
 mod trips;
 
