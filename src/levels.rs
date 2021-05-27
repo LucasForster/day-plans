@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ops::Add;
 use std::sync::Once;
+use std::time::Duration;
 
 use super::io;
 use super::purposes::{Category, Categories};
@@ -17,9 +18,19 @@ impl Add for TimeBin {
         Self((self.0 + other.0) % TimeBins::COUNT)
     }
 }
+impl Add<Duration> for TimeBin {
+    type Output = Self;
+    fn add(self, other: Duration) -> Self {
+        let seconds = other.as_secs_f64();
+        let time_bin_duration = TimeBins::DUR_SECS as f64;
+        self + TimeBin((seconds / time_bin_duration).ceil() as usize)
+    }
+}
+
 pub struct TimeBins;
 impl TimeBins {
     const COUNT: usize = 48;
+    const DUR_SECS: usize = 30*60;
     // TODO: const initialization? macro?
     const TIME_BINS: [TimeBin; TimeBins::COUNT] = [TimeBin(0), TimeBin(1), TimeBin(2), TimeBin(3), TimeBin(4), TimeBin(5), TimeBin(6), TimeBin(7), TimeBin(8), TimeBin(9), TimeBin(10), TimeBin(11), TimeBin(12), TimeBin(13), TimeBin(14), TimeBin(15), TimeBin(16), TimeBin(17), TimeBin(18), TimeBin(19), TimeBin(20), TimeBin(21), TimeBin(22), TimeBin(23), TimeBin(24), TimeBin(25), TimeBin(26), TimeBin(27), TimeBin(28), TimeBin(29), TimeBin(30), TimeBin(31), TimeBin(32), TimeBin(33), TimeBin(34), TimeBin(35), TimeBin(36), TimeBin(37), TimeBin(38), TimeBin(39), TimeBin(40), TimeBin(41), TimeBin(42), TimeBin(43), TimeBin(44), TimeBin(45), TimeBin(46), TimeBin(47)];
 }
