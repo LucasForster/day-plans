@@ -61,6 +61,7 @@ fn load_file() -> Districts {
     for i in 0..districts.len() { // TODO: get iter with index from Vec
         map.insert(districts[i].id, i);
     }
+    println!("Loaded {} districts.", districts.len());
     Districts {
         districts: districts.try_into().unwrap(),
         map,

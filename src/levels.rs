@@ -76,6 +76,7 @@ fn load_file<'c>(categories: &'c Categories) -> Levels<'c> {
         let array: [Level; TimeBins::COUNT] = norm.try_into().unwrap();
         map.insert(category, array);
     }
+    println!("Loaded {} levels, each for {} time bins.", map.len(), TimeBins::COUNT);
     Levels {
         map
     }

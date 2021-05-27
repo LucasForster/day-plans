@@ -88,6 +88,7 @@ fn load_file() -> Categories {
     for i in 0..categories.len() { // TODO: get iter with index from Vec
         map.insert(categories[i].id, i);
     }
+    println!("Loaded {} categories.", categories.len());
     Categories {
         categories: categories.try_into().unwrap(),
         map,

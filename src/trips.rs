@@ -67,6 +67,7 @@ fn load_file<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Tr
             }
         }
     }
+    println!("Loaded {} distinct trips, {} total count.", trips.len(), trips.iter().map(|t| t.count).sum::<TripCount>());
     Trips {
         trips
     }
