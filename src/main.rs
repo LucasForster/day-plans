@@ -1,7 +1,7 @@
 mod districts;
 mod io;
 mod levels;
-mod mode;
+mod modes;
 mod purposes;
 mod trips;
 
