@@ -11,7 +11,7 @@ const COUNT: usize = 24;
 
 type Id = usize;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Purpose {
     Home,
     Leisure,
@@ -41,7 +41,7 @@ impl Purpose {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Category {
     pub id: Id,
     pub origin: Purpose,
