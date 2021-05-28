@@ -7,7 +7,7 @@ use super::purposes::{Category, Categories};
 
 type TripCount = usize;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Transport {
     Public,
     Individual,
@@ -23,7 +23,7 @@ impl Transport {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Trip<'c, 'd> {
     pub transport: Transport,
     pub category: &'c Category,

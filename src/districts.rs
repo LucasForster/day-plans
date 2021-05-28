@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::sync::Once;
 
+use derivative::Derivative;
 use proj::Proj;
 
 use super::io;
@@ -12,10 +13,13 @@ const COUNT: usize = 647;
 
 type Id = usize;
 
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug, PartialEq, Eq, Hash)]
 pub struct District {
     pub id: Id,
+    #[derivative(Hash="ignore")]
     pub x: f64,
+    #[derivative(Hash="ignore")]
     pub y: f64,
     pub info: String,
 }
