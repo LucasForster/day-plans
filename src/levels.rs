@@ -11,6 +11,7 @@ use super::purposes::{Category, Categories};
 
 type Level = f64;
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TimeBin (usize);
 impl Add for TimeBin {
     type Output = Self;

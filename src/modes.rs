@@ -1,3 +1,6 @@
+use strum_macros::EnumIter;
+
+#[derive(Clone, Copy, EnumIter, Debug, PartialEq, Eq, Hash)]
 pub enum Mode {
     Feet, Bike, Pt, CarDriver, CarPassenger
 }
