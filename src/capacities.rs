@@ -67,7 +67,6 @@ struct Generator<T: Copy> {
     elements: Vec<T>,
     distribution: Vec<Share>,
     counts: Vec<usize>,
-    total: usize,
 }
 impl<T: Copy> Generator<T> {
     fn new(input: Vec<(T, Share)>) -> Generator<T> {
@@ -75,7 +74,6 @@ impl<T: Copy> Generator<T> {
             elements: input.iter().map(|entry| entry.0).collect(),
             distribution: input.iter().map(|entry| entry.1).collect(),
             counts: vec![0; input.len()],
-            total: 0,
         }
     }
 }
@@ -85,7 +83,8 @@ impl<T: Copy> Iterator for Generator<T> {
         if self.elements.is_empty() {
             return None;
         }
-        let target_counts: Vec<f64> = self.distribution.iter().map(|share| share * ((self.total + 1) as f64)).collect();
+        let total: usize = self.counts.iter().sum();
+        let target_counts: Vec<f64> = self.distribution.iter().map(|share| share * ((total + 1) as f64)).collect();
         let mut index_max: usize = 0;
         let mut diff_max: f64 = target_counts[index_max] - (self.counts[index_max] as f64);
         for i in 1..self.elements.len() {
