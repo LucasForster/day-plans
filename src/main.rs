@@ -1,5 +1,6 @@
 mod capacities;
 mod districts;
+mod graph;
 mod io;
 mod levels;
 mod modes;
@@ -11,6 +12,6 @@ fn main() {
     let categories = purposes::load().unwrap();
     let trips = trips::load(&categories, &districts).unwrap();
     let levels = levels::load(&categories).unwrap();
-    let capacities = capacities::Capacities::new(&trips, &categories, &levels);
-    println!("{:?}", capacities.of_modes);
+    capacities::Capacities::new(&trips, &categories, &levels);
+    graph::Graph::new(&trips);
 }

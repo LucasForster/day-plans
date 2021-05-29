@@ -11,7 +11,7 @@ const COUNT: usize = 24;
 
 type Id = usize;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Purpose {
     Home,
     Leisure,
