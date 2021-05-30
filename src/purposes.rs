@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::slice::Iter;
 use std::sync::Once;
+use std::time::Duration;
 
 use super::io;
 
@@ -10,6 +11,9 @@ const COUNT: usize = 24;
 
 
 type Id = usize;
+
+macro_rules! hours {($h:expr) => { Duration::new($h*60*60, 0) }}
+macro_rules! minutes {($m:expr) => { Duration::new($m*60, 0) }}
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Purpose {
@@ -37,6 +41,16 @@ impl Purpose {
             "weiterf.Schule" => Purpose::School,
             "Wohnen" => Purpose::Home,
             unknown => panic!("Unknown purpose string \"{}\"", unknown),
+        }
+    }
+    pub fn duration(&self) -> Duration {
+        match self {
+            Purpose::Home => hours!(8),
+            Purpose::Work => hours!(8),
+            Purpose::School => hours!(7),
+            Purpose::Leisure => hours!(2),
+            Purpose::Shopping => hours!(1),
+            Purpose::Service => minutes!(30),
         }
     }
 }
