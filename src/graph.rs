@@ -7,17 +7,17 @@ use super::districts::District;
 use super::levels::{TimeBin, TimeBins};
 use super::modes::Mode;
 use super::purposes::Purpose;
-use super::trips::{Trip, Trips};
+use super::trips::Trip;
 
 
 type Graph<'t> = Petgraph::<N<'t>, E<'t>>;
 pub type N<'t> = (&'t District, Purpose, TimeBin);
 pub type E<'t> = (&'t Trip<'t, 't>, Mode);
 
-pub fn new<'t>(trips: &'t Trips) -> Graph<'t> {
+pub fn new<'t>(trips: &'t Vec<Trip>) -> Graph<'t> {
     let mut graph = Graph::new();
     let mut nodes = HashMap::<N<'t>, NodeIndex>::new();
-    for trip in trips.trips.iter() {
+    for trip in trips {
         for time_bin in TimeBins {
             for mode in Mode::iter() {
                 let source_key: N<'t> = (trip.origin, trip.category.origin, time_bin);

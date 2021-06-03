@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::levels::{Levels, TimeBin, TimeBins};
 use super::modes::Mode;
 use super::purposes::{Category, Categories};
-use super::trips::{Trip, Trips};
+use super::trips::Trip;
 
 use strum::IntoEnumIterator;
 
@@ -19,10 +19,10 @@ pub struct Capacities<'c> {
     pub of_modes: OfModes,
 }
 impl Capacities<'_> {
-    pub fn new<'c, 'l>(trips: &'c Trips, categories: &'c Categories, levels: &'l Levels) -> Capacities<'c> {
+    pub fn new<'c, 'l>(trips: &'c Vec<Trip>, categories: &'c Categories, levels: &'l Levels) -> Capacities<'c> {
         let mut of_trips: OfTrips<'c> = OfTrips::new();
         {
-            for trip in trips.trips.iter() {
+            for trip in trips {
                 of_trips.insert(&trip, trip.count);
             }
         }
@@ -36,7 +36,7 @@ impl Capacities<'_> {
                 }
                 generators.insert(&category, Generator::new(input));
             }
-            for trip in trips.trips.iter() {
+            for trip in trips {
                 let time_bin = generators.get_mut(&trip.category).unwrap().next().unwrap();
                 let curr_count: Count = *of_levels.get(&(trip.category, time_bin)).unwrap_or(&0);
                 of_levels.insert((trip.category, time_bin), curr_count + 1);
@@ -46,7 +46,7 @@ impl Capacities<'_> {
         {
             let input: Vec<(Mode, Share)> = Mode::iter().map(|mode| (mode, mode.get_share())).collect();
             let mut generator = Generator::new(input);
-            for _ in trips.trips.iter() {
+            for _ in trips {
                 let mode = generator.next().unwrap();
                 let curr_count: Count = *of_modes.get(&mode).unwrap_or(&0);
                 of_modes.insert(mode, curr_count + 1);

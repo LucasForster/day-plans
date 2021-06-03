@@ -32,21 +32,15 @@ pub struct Trip<'c, 'd> {
     pub count: TripCount,
 }
 
-#[derive(Debug)]
-pub struct Trips<'c, 'd> {
-    pub trips: Vec<Trip<'c, 'd>>,
-}
-
-
 const LOAD: Once = Once::new();
-pub fn load<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Option<Trips<'c, 'd>> {
+pub fn load<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Option<Vec<Trip<'c, 'd>>> {
     let mut trips = None;
     LOAD.call_once(|| {
         trips = Some(load_file(categories, districts));
     });
     trips
 }
-fn load_file<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Trips<'c, 'd> {
+fn load_file<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Vec<Trip<'c, 'd>> {
     let mut trips: Vec<Trip> = Vec::new();
     for transport in vec![Transport::Individual, Transport::Public] {
         for category in categories.iter() {
@@ -68,7 +62,5 @@ fn load_file<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Tr
         }
     }
     println!("Loaded {} distinct trips, {} total count.", trips.len(), trips.iter().map(|t| t.count).sum::<TripCount>());
-    Trips {
-        trips
-    }
+    trips
 }
