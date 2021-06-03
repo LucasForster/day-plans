@@ -13,5 +13,5 @@ fn main() {
     let trips = trips::load(&categories, &districts).unwrap();
     let levels = levels::load(&categories).unwrap();
     capacities::Capacities::new(&trips, &categories, &levels);
-    graph::Graph::new(&trips);
+    graph::new(&trips);
 }
