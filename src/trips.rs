@@ -1,6 +1,6 @@
 use std::sync::Once;
 
-use super::districts::{District, Districts};
+use super::districts::{Id as DistrictId, Districts};
 use super::io;
 use super::purposes::{Category, Categories};
 
@@ -23,12 +23,12 @@ impl Transport {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash)]
 pub struct Trip<'c, 'd> {
     pub transport: Transport,
     pub category: &'c Category,
-    pub origin: &'d District,
-    pub destination: &'d District,
+    pub origin: &'d DistrictId,
+    pub destination: &'d DistrictId,
     pub count: TripCount,
 }
 
@@ -54,8 +54,8 @@ fn load_file<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Ve
                 trips.push(Trip {
                     transport,
                     category,
-                    origin: districts.get(record[0].parse().unwrap()).unwrap(),
-                    destination: districts.get(record[1].parse().unwrap()).unwrap(),
+                    origin: districts.id(record[0].parse().unwrap()).unwrap(),
+                    destination: districts.id(record[1].parse().unwrap()).unwrap(),
                     count,
                 });
             }

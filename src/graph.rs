@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
 use strum::IntoEnumIterator;
 
-use super::districts::District;
+use super::districts::Id as DistrictId;
 use super::levels::{TimeBin, TimeBins};
 use super::modes::Mode;
 use super::purposes::Purpose;
@@ -11,7 +11,7 @@ use super::trips::Trip;
 
 
 type Graph<'t> = Petgraph::<N<'t>, E<'t>>;
-pub type N<'t> = (&'t District, Purpose, TimeBin);
+pub type N<'t> = (&'t DistrictId, Purpose, TimeBin);
 pub type E<'t> = (&'t Trip<'t, 't>, Mode);
 
 pub fn new<'t>(trips: &'t Vec<Trip>) -> Graph<'t> {
