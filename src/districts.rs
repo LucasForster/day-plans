@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::hash::{Hash, Hasher};
 use std::sync::Once;
 
-use derivative::Derivative;
 use proj::Proj;
 
 use super::io;
@@ -13,18 +13,25 @@ const COUNT: usize = 647;
 
 type Id = usize;
 
-#[derive(Derivative)]
-#[derivative(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug)]
 pub struct District {
     pub id: Id,
-    #[derivative(Hash="ignore")]
     pub x: f64,
-    #[derivative(Hash="ignore")]
     pub y: f64,
     pub info: String,
 }
+impl Hash for District {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+impl PartialEq for District {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+impl Eq for District {}
 
-#[derive(Debug)]
 pub struct Districts {
     districts: [District; COUNT],
     map: HashMap<Id, usize>,
