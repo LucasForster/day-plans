@@ -1,22 +1,28 @@
-use strum_macros::EnumIter;
+use phf::phf_map;
 
-#[derive(Clone, Copy, EnumIter, Debug, PartialEq, Eq, Hash)]
-pub enum Mode {
-    Feet, Bike, Pt, CarDriver, CarPassenger
-}
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+pub struct Mode(&'static str);
 impl Mode {
-    pub fn get_share(&self) -> f64 {
-        /*
-         * Source: "Statistisches Jahrbuch", Stadt Aachen, 2017, p.104
-         * Copyright: Stadt Aachen FB02/200
-         * License: "Nachdruck oder weitere Veröffentlichung mit Quellenangabe gestattet"
-         */
-        match *self {
-            Mode::Feet => 0.298,
-            Mode::Bike => 0.110,
-            Mode::Pt => 0.130,
-            Mode::CarDriver => 0.336,
-            Mode::CarPassenger => 0.126,
-        }
+    pub fn share(&self) -> f64 {
+        *Modes::SHARES.get(self.0).unwrap()
+    }
+}
+
+pub struct Modes;
+impl Modes {
+    const SHARES: phf::Map<&'static str, f64> = phf_map! {
+        "Feet" => 0.298f64,
+        "Bike" => 0.110f64,
+        "Pt" => 0.130f64,
+        "CarDriver" => 0.336f64,
+        "CarPassenger" => 0.126f64,
+    };
+}
+impl IntoIterator for Modes {
+    type Item = Mode;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Self::SHARES.keys().map(|key| Mode(key)).collect::<Vec<Self::Item>>().into_iter()
     }
 }

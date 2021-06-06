@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
-use strum::IntoEnumIterator;
 
 use super::districts::Id as DistrictId;
 use super::levels::{TimeBin, TimeBins};
-use super::modes::Mode;
+use super::modes::{Mode, Modes};
 use super::purposes::Purpose;
 use super::trips::Trip;
 
@@ -19,7 +18,7 @@ pub fn new<'t>(trips: &'t Vec<Trip>) -> Graph<'t> {
     let mut nodes = HashMap::<N<'t>, NodeIndex>::new();
     for trip in trips {
         for time_bin in TimeBins {
-            for mode in Mode::iter() {
+            for mode in Modes {
                 let source_key: N<'t> = (trip.origin, trip.category.origin, time_bin);
                 let source_index: NodeIndex = *nodes.entry(source_key)
                     .or_insert(graph.add_node(source_key));

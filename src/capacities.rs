@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
 use super::levels::{Levels, TimeBin, TimeBins};
-use super::modes::Mode;
+use super::modes::{Mode, Modes};
 use super::purposes::{Category, Categories};
 use super::trips::Trip;
-
-use strum::IntoEnumIterator;
 
 
 type Count = usize;
@@ -44,7 +42,7 @@ impl Capacities<'_> {
         }
         let mut of_modes: OfModes = OfModes::new();
         {
-            let input: Vec<(Mode, Share)> = Mode::iter().map(|mode| (mode, mode.get_share())).collect();
+            let input: Vec<(Mode, Share)> = Modes.into_iter().map(|mode| (mode, mode.share())).collect();
             let mut generator = Generator::new(input);
             for _ in trips {
                 let mode = generator.next().unwrap();
