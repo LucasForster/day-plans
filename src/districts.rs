@@ -28,6 +28,9 @@ impl Districts {
             None => None,
         }
     }
+    pub fn ids(&self) -> Vec<&Id> {
+        self.map.keys().collect()
+    }
 }
 
 pub fn load() -> Districts {
