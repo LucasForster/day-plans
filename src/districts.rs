@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Once;
 
 use csv::StringRecord;
 use proj::Proj;
@@ -10,7 +9,6 @@ use super::io;
 #[derive(PartialEq, Eq, Hash)]
 pub struct Id(usize);
 
-#[derive(Debug)]
 pub struct District {
     pub x: f64,
     pub y: f64,
@@ -32,15 +30,7 @@ impl Districts {
     }
 }
 
-const LOAD: Once = Once::new();
-pub fn load() -> Option<Districts> {
-    let mut districts = None;
-    LOAD.call_once(|| {
-        districts = Some(load_file())
-    });
-    districts
-}
-fn load_file() -> Districts {
+pub fn load() -> Districts {
     let records = io::read_csv("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat", true, false, b'\t', None);
     let proj = Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
     let mut map = HashMap::<Id, District>::new();

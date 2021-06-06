@@ -1,5 +1,3 @@
-use std::sync::Once;
-
 use super::districts::{Id as DistrictId, Districts};
 use super::io;
 use super::purposes::{Category, Categories};
@@ -32,15 +30,7 @@ pub struct Trip<'c, 'd> {
     pub count: TripCount,
 }
 
-const LOAD: Once = Once::new();
-pub fn load<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Option<Vec<Trip<'c, 'd>>> {
-    let mut trips = None;
-    LOAD.call_once(|| {
-        trips = Some(load_file(categories, districts));
-    });
-    trips
-}
-fn load_file<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Vec<Trip<'c, 'd>> {
+pub fn load<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Vec<Trip<'c, 'd>> {
     let mut trips: Vec<Trip> = Vec::new();
     for transport in vec![Transport::Individual, Transport::Public] {
         for category in categories.iter() {

@@ -2,7 +2,6 @@ use std::array;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::ops::Add;
-use std::sync::Once;
 use std::time::Duration;
 
 use super::io;
@@ -55,15 +54,7 @@ impl Levels<'_> {
 }
 
 
-const LOAD: Once = Once::new();
-pub fn load<'c>(categories: &'c Categories) -> Option<Levels> {
-    let mut levels = None;
-    LOAD.call_once(|| {
-        levels = Some(load_file(categories));
-    });
-    levels
-}
-fn load_file<'c>(categories: &'c Categories) -> Levels<'c> {
+pub fn load<'c>(categories: &'c Categories) -> Levels<'c> {
     let mut map: HashMap<&'c Category, [Level; TimeBins::COUNT]> = HashMap::new();
     for category in categories.iter() {
         let path = format!("verkehrsfluss/verkehrsflussdaten/pegel{}.txt", category.id);

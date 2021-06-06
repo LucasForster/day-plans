@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::slice::Iter;
-use std::sync::Once;
 use std::time::Duration;
 
 use super::io;
@@ -79,15 +78,8 @@ impl Categories {
     }
 }
 
-const LOAD: Once = Once::new();
-pub fn load() -> Option<Categories> {
-    let mut districts = None;
-    LOAD.call_once(|| {
-        districts = Some(load_file());
-    });
-    districts
-}
-fn load_file() -> Categories {
+
+pub fn load() -> Categories {
     let records = io::read_csv("verkehrsfluss/verkehrsflussdaten/categoryInformation.txt", false, false, b';', None);
     let mut categories: Vec<Category> = Vec::new();
     for record in records {
