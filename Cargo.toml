@@ -11,3 +11,4 @@ csv = "1.1.6"
 petgraph = "0.5.1"
 phf = { version = "0.8.0", features = ["macros"] }
 proj = "0.22.0"
+rayon = "1.5.1"
