@@ -9,30 +9,57 @@ use super::purposes::Purpose;
 use super::trips::Trip;
 
 
-type Graph<'t> = Petgraph::<N<'t>, E<'t>>;
-pub type N<'t> = (&'t DistrictId, Purpose, TimeBin);
-pub type E<'t> = (&'t Trip<'t, 't>, Mode);
+pub struct Graph<'t>(Petgraph::<Node<'t>, Edge<'t>>);
+#[derive(PartialEq, Eq, Hash)]
+pub struct Node<'t> {
+    pub district_id: &'t DistrictId,
+    pub purpose: Purpose,
+    pub time_bin: TimeBin,
+}
+pub struct Edge<'t> {
+    pub trip: &'t Trip<'t, 't>,
+    pub mode: Mode,
+}
 
-pub fn new<'t>(trips: &'t Vec<Trip>) -> Graph<'t> {
-    let mut graph = Graph::new();
-    let mut nodes = HashMap::<N<'t>, NodeIndex>::new();
-    for trip in trips {
-        for time_bin in TimeBins {
-            for mode in Modes {
-                let source_key: N<'t> = (trip.origin, trip.category.origin, time_bin);
-                let source_index: NodeIndex = *nodes.entry(source_key)
-                    .or_insert(graph.add_node(source_key));
+impl<'t> Graph<'t> {
+    pub fn new(trips: &'t Vec<Trip>) -> Self {
+        let mut graph = Petgraph::<Node<'t>, Edge<'t>>::new();
+        let mut nodes = HashMap::<Node<'t>, NodeIndex>::new();
+        for trip in trips {
+            for time_bin in TimeBins {
+                for mode in Modes {
+                    let source_key = Node {
+                        district_id: trip.origin,
+                        purpose: trip.category.origin,
+                        time_bin,
+                    };
+                    let source_index: NodeIndex = *nodes.entry(source_key)
+                        .or_insert(graph.add_node(source_key));
 
-                let destination_time_bin = time_bin + trip.category.origin.duration(); // TODO: leg duration
+                    let destination_time_bin = time_bin + trip.category.origin.duration(); // TODO: leg duration
 
-                let destination_key: N<'t> = (trip.destination, trip.category.destination, destination_time_bin);
-                let destination_index: NodeIndex = *nodes.entry(destination_key)
-                    .or_insert(graph.add_node(destination_key));
+                    let destination_key = Node {
+                        district_id: trip.destination,
+                        purpose: trip.category.destination,
+                        time_bin,
+                    };
+                    let destination_index: NodeIndex = *nodes.entry(destination_key)
+                        .or_insert(graph.add_node(destination_key));
 
-                let edge_key: E<'t> = (&trip, mode);
-                graph.add_edge(source_index, destination_index, edge_key);
+                    let edge_key = Edge {
+                        trip,
+                        mode,
+                    };
+                    graph.add_edge(source_index, destination_index, edge_key);
+                }
             }
         }
+        Graph(graph)
     }
-    graph
+    pub fn node_indices(&self) -> Vec<NodeIndex> {
+        self.0.node_indices().collect()
+    }
+    pub fn node(&self, node_index: NodeIndex) -> &Node {
+        self.0.node_weight(node_index).unwrap()
+    }
 }
