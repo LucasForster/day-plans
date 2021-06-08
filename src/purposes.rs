@@ -22,6 +22,7 @@ pub enum Purpose {
     School,
     Service,
     Shopping,
+    COUNT
 }
 impl Purpose {
     fn from_string(string: &str) -> Purpose {
@@ -50,6 +51,7 @@ impl Purpose {
             Purpose::Leisure => hours!(2),
             Purpose::Shopping => hours!(1),
             Purpose::Service => minutes!(30),
+            Purpose::COUNT => panic!()
         }
     }
 }

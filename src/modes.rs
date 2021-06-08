@@ -1,6 +1,6 @@
 use phf::phf_map;
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Mode(&'static str);
 impl Mode {
     pub fn share(&self) -> f64 {
