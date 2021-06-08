@@ -10,7 +10,7 @@ use super::trips::Trip;
 
 
 pub struct Graph<'t>(Petgraph::<Node<'t>, Edge<'t>>);
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Node<'t> {
     pub district_id: &'t DistrictId,
     pub purpose: Purpose,
@@ -41,7 +41,7 @@ impl<'t> Graph<'t> {
                     let destination_key = Node {
                         district_id: trip.destination,
                         purpose: trip.category.destination,
-                        time_bin,
+                        time_bin: time_bin + destination_time_bin,
                     };
                     let destination_index: NodeIndex = *nodes.entry(destination_key)
                         .or_insert(graph.add_node(destination_key));
