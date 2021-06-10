@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
 
+use super::categories::ID_MAP as CATEGORY_ID_MAP;
 use super::districts::Id as DistrictId;
 use super::levels::{TimeBin, TimeBins};
 use super::modes::{Mode, Modes};
@@ -17,7 +18,7 @@ pub struct Node {
     pub time_bin: TimeBin,
 }
 pub struct Edge<'t> {
-    pub trip: &'t Trip<'t>,
+    pub trip: &'t Trip,
     pub mode: Mode,
 }
 
@@ -28,19 +29,20 @@ impl<'t> Graph<'t> {
         for trip in trips {
             for time_bin in TimeBins {
                 for mode in Modes {
+                    let trip_category = CATEGORY_ID_MAP.get(&trip.category_id).unwrap();
                     let source_key = Node {
                         district_id: trip.origin,
-                        purpose: trip.category.origin,
+                        purpose: trip_category.origin,
                         time_bin,
                     };
                     let source_index: NodeIndex = *nodes.entry(source_key)
                         .or_insert(graph.add_node(source_key));
 
-                    let destination_time_bin = time_bin + trip.category.origin.duration(); // TODO: leg duration
+                    let destination_time_bin = time_bin + trip_category.origin.duration(); // TODO: leg duration
 
                     let destination_key = Node {
                         district_id: trip.destination,
-                        purpose: trip.category.destination,
+                        purpose: trip_category.destination,
                         time_bin: time_bin + destination_time_bin,
                     };
                     let destination_index: NodeIndex = *nodes.entry(destination_key)

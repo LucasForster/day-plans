@@ -1,4 +1,5 @@
 mod capacities;
+mod categories;
 mod districts;
 mod filters;
 mod graph;
@@ -9,9 +10,8 @@ mod purposes;
 mod trips;
 
 fn main() {
-    let categories = purposes::load();
-    let trips = trips::load(&categories);
-    let levels = levels::load(&categories);
-    capacities::Capacities::new(&trips, &categories, &levels);
+    let trips = trips::load();
+    let levels = levels::load();
+    capacities::Capacities::new(&trips, &levels);
     graph::Graph::new(&trips);
 }

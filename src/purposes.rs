@@ -1,18 +1,6 @@
-use std::collections::HashMap;
-use std::convert::TryInto;
-use std::slice::Iter;
+use std::str::FromStr;
 use std::time::Duration;
 
-use super::io;
-
-
-const COUNT: usize = 24;
-
-
-type Id = usize;
-
-macro_rules! hours {($h:expr) => { Duration::new($h*60*60, 0) }}
-macro_rules! minutes {($m:expr) => { Duration::new($m*60, 0) }}
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Purpose {
@@ -24,81 +12,39 @@ pub enum Purpose {
     Shopping,
     COUNT
 }
+impl FromStr for Purpose {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Arbeit" => Ok(Self::Work),
+            "Dienstleistung" => Ok(Self::Service),
+            "Einkaufen" => Ok(Self::Shopping),
+            "Freizeit" => Ok(Self::Leisure),
+            "Grundschule" => Ok(Self::School),
+            "Hörsaal" => Ok(Self::School),
+            "HörsaalHin" => Ok(Self::School),
+            "Hörsaalplatz" => Ok(Self::School),
+            "HörsaalRück" => Ok(Self::School),
+            "Service" => Ok(Self::Service),
+            "Stud.Ziele" => Ok(Self::School),
+            "weiterf.Schule" => Ok(Self::School),
+            "Wohnen" => Ok(Self::Home),
+            unknown => Err(format!("Unknown purpose string \"{}\"!", unknown)),
+        }
+    }
+}
 impl Purpose {
-    fn from_string(string: &str) -> Purpose {
-        match string {
-            "Arbeit" => Purpose::Work,
-            "Dienstleistung" => Purpose::Service,
-            "Einkaufen" => Purpose::Shopping,
-            "Freizeit" => Purpose::Leisure,
-            "Grundschule" => Purpose::School,
-            "Hörsaal" => Purpose::School,
-            "HörsaalHin" => Purpose::School,
-            "Hörsaalplatz" => Purpose::School,
-            "HörsaalRück" => Purpose::School,
-            "Service" => Purpose::Service,
-            "Stud.Ziele" => Purpose::School,
-            "weiterf.Schule" => Purpose::School,
-            "Wohnen" => Purpose::Home,
-            unknown => panic!("Unknown purpose string \"{}\"", unknown),
-        }
-    }
     pub fn duration(&self) -> Duration {
+        macro_rules! hours {($h:expr) => { minutes!($h*60) }}
+        macro_rules! minutes {($m:expr) => { Duration::from_secs($m*60) }}
         match self {
-            Purpose::Home => hours!(8),
-            Purpose::Work => hours!(8),
-            Purpose::School => hours!(7),
-            Purpose::Leisure => hours!(2),
-            Purpose::Shopping => hours!(1),
-            Purpose::Service => minutes!(30),
-            Purpose::COUNT => panic!()
+            Self::Home => hours!(8),
+            Self::Work => hours!(8),
+            Self::School => hours!(7),
+            Self::Leisure => hours!(2),
+            Self::Shopping => hours!(1),
+            Self::Service => minutes!(30),
+            Self::COUNT => panic!()
         }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Hash)]
-pub struct Category {
-    pub id: Id,
-    pub origin: Purpose,
-    pub destination: Purpose,
-}
-
-#[derive(Debug)]
-pub struct Categories {
-    categories: [Category; COUNT],
-    map: HashMap<Id, usize>,
-}
-impl Categories {
-    pub fn get(&self, id: Id) -> Option<&Category> {
-        match self.map.get(&id) {
-            Some(&index) => Some(&self.categories[index]),
-            None => None,
-        }
-    }
-    pub fn iter<'c>(&'c self) -> Iter<'c, Category> {
-        self.categories.iter()
-    }
-}
-
-
-pub fn load() -> Categories {
-    let records = io::read_csv("verkehrsfluss/verkehrsflussdaten/categoryInformation.txt", false, false, b';', None);
-    let mut categories: Vec<Category> = Vec::new();
-    for record in records {
-        let split = record[2].split("->").collect::<Vec<&str>>();
-        categories.push(Category {
-            id: record[0].parse().unwrap(),
-            origin: Purpose::from_string(split[0]),
-            destination: Purpose::from_string(split[1]),
-        });
-    }
-    let mut map: HashMap<Id, usize> = HashMap::new();
-    for i in 0..categories.len() { // TODO: get iter with index from Vec
-        map.insert(categories[i].id, i);
-    }
-    println!("Loaded {} categories.", categories.len());
-    Categories {
-        categories: categories.try_into().unwrap(),
-        map,
     }
 }

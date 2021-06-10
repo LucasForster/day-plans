@@ -2,10 +2,11 @@ use std::convert::TryInto;
 
 use super::{
     capacities::Capacities,
+    categories::{Id as CategoryId, ID_MAP as CATEGORY_ID_MAP},
     graph::{Node, Edge},
     levels::{TimeBin, TimeBins},
     modes::{Mode, Modes},
-    purposes::{Category, Purpose},
+    purposes::Purpose,
     trips::Trip,
 };
 
@@ -133,7 +134,7 @@ impl Filter for DistinctActivitesFilter {
     }
     fn expand(&mut self, edge: &Edge, _: &Node) -> Option<bool> {
         // origin of trip includes first activity but is still compatible with activity cycle
-        let index = edge.trip.category.origin as usize;
+        let index = CATEGORY_ID_MAP.get(&edge.trip.category_id).unwrap().origin as usize;
         let prev = self.activities[index];
         self.activities[index] = true;
         Some(!prev)

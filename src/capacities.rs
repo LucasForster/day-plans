@@ -2,42 +2,42 @@ use std::collections::HashMap;
 
 use super::levels::{Levels, TimeBin, TimeBins};
 use super::modes::{Mode, Modes};
-use super::purposes::{Category, Categories};
+use super::categories::{Id as CategoryId, ID_MAP as CATEGORY_ID_MAP};
 use super::trips::Trip;
 
 
 type Count = usize;
-type OfTrips<'t> = HashMap<&'t Trip<'t>, Count>;
-type OfLevels<'c> = HashMap<(&'c Category, TimeBin), Count>;
+type OfTrips<'t> = HashMap<&'t Trip, Count>;
+type OfLevels = HashMap<(CategoryId, TimeBin), Count>;
 type OfModes = HashMap<Mode, Count>;
 
 pub struct Capacities<'c> {
     pub of_trips: OfTrips<'c>,
-    pub of_levels: OfLevels<'c>,
+    pub of_levels: OfLevels,
     pub of_modes: OfModes,
 }
 impl Capacities<'_> {
-    pub fn new<'c, 'l>(trips: &'c Vec<Trip>, categories: &'c Categories, levels: &'l Levels) -> Capacities<'c> {
+    pub fn new<'c, 'l>(trips: &'c Vec<Trip>, levels: &'l Levels) -> Capacities<'c> {
         let mut of_trips: OfTrips<'c> = OfTrips::new();
         {
             for trip in trips {
                 of_trips.insert(&trip, trip.count);
             }
         }
-        let mut of_levels: OfLevels<'c> = OfLevels::new();
+        let mut of_levels = OfLevels::new();
         {
-            let mut generators: HashMap<&'c Category, Generator<TimeBin>> = HashMap::new();
-            for category in categories.iter() {
+            let mut generators: HashMap<CategoryId, Generator<TimeBin>> = HashMap::new();
+            for &category_id in CATEGORY_ID_MAP.keys() {
                 let mut input: Vec<(TimeBin, Share)> = Vec::new();
                 for time_bin in TimeBins {
-                    input.push((time_bin, levels.get_level(&category, time_bin)));
+                    input.push((time_bin, levels.get_level(category_id, time_bin)));
                 }
-                generators.insert(&category, Generator::new(input));
+                generators.insert(category_id, Generator::new(input));
             }
             for trip in trips {
-                let time_bin = generators.get_mut(&trip.category).unwrap().next().unwrap();
-                let curr_count: Count = *of_levels.get(&(trip.category, time_bin)).unwrap_or(&0);
-                of_levels.insert((trip.category, time_bin), curr_count + 1);
+                let time_bin = generators.get_mut(&trip.category_id).unwrap().next().unwrap();
+                let curr_count: Count = *of_levels.get(&(trip.category_id, time_bin)).unwrap_or(&0);
+                of_levels.insert((trip.category_id, time_bin), curr_count + 1);
             }
         }
         let mut of_modes: OfModes = OfModes::new();
