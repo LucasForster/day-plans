@@ -1,4 +1,4 @@
-use super::districts::{Id as DistrictId, Districts};
+use super::districts::{Id as DistrictId, parse_id as parse_district_id};
 use super::io;
 use super::purposes::{Category, Categories};
 
@@ -22,15 +22,17 @@ impl Transport {
 }
 
 #[derive(PartialEq, Eq, Hash)]
-pub struct Trip<'c, 'd> {
+pub struct Trip<'c> {
     pub transport: Transport,
     pub category: &'c Category,
-    pub origin: &'d DistrictId,
-    pub destination: &'d DistrictId,
+    pub origin: DistrictId,
+    pub destination: DistrictId,
     pub count: TripCount,
 }
 
-pub fn load<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Vec<Trip<'c, 'd>> {
+
+
+pub fn load<'c>(categories: &'c Categories) -> Vec<Trip<'c>> {
     let mut trips: Vec<Trip> = Vec::new();
     for transport in vec![Transport::Individual, Transport::Public] {
         for category in categories.iter() {
@@ -44,8 +46,8 @@ pub fn load<'c, 'd>(categories: &'c Categories, districts: &'d Districts) -> Vec
                 trips.push(Trip {
                     transport,
                     category,
-                    origin: districts.id(record[0].parse().unwrap()).unwrap(),
-                    destination: districts.id(record[1].parse().unwrap()).unwrap(),
+                    origin: parse_district_id(record[0].parse().unwrap()).unwrap(),
+                    destination: parse_district_id(record[1].parse().unwrap()).unwrap(),
                     count,
                 });
             }

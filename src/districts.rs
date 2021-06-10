@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 
-use csv::StringRecord;
-use proj::Proj;
+use lazy_static::lazy_static;
 
 use super::io;
 
 
-#[derive(PartialEq, Eq, Hash)]
-pub struct Id(usize);
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+pub struct Id(u16);
 
 pub struct District {
     pub x: f64,
@@ -15,27 +14,21 @@ pub struct District {
     pub info: String,
 }
 
-pub struct Districts {
-    map: HashMap<Id, District>,
+lazy_static! {
+    pub static ref ID_MAP: HashMap<Id, District> = load();
 }
-impl Districts {
-    pub fn get(&self, id: &Id) -> &District {
-        self.map.get(id).unwrap()
-    }
-    pub fn id(&self, id: usize) -> Option<&Id> {
-        match self.map.get_key_value(&Id(id)) {
-            Some(key_value) => Some(key_value.0),
-            None => None,
-        }
-    }
-    pub fn ids(&self) -> Vec<&Id> {
-        self.map.keys().collect()
+
+pub fn parse_id(id: u16) -> Option<Id> {
+    if ID_MAP.contains_key(&Id(id)) {
+        Some(Id(id))
+    } else {
+        None
     }
 }
 
-pub fn load() -> Districts {
+fn load() -> HashMap<Id, District> {
     let records = io::read_csv("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat", true, false, b'\t', None);
-    let proj = Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
+    let proj = proj::Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
     let mut map = HashMap::<Id, District>::new();
     for record in records {
         let id = Id(record[0].parse().unwrap());
@@ -47,9 +40,9 @@ pub fn load() -> Districts {
         map.insert(id, District { x, y, info });
     }
     println!("Loaded {} districts.", map.len());
-    Districts { map }
+    map
 }
-fn compose_info(record: &StringRecord) -> String {
+fn compose_info(record: &csv::StringRecord) -> String {
     if record[3].eq(&record[5]) {
         record[3].to_string()
     } else {

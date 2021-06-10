@@ -7,7 +7,7 @@ use super::trips::Trip;
 
 
 type Count = usize;
-type OfTrips<'t> = HashMap<&'t Trip<'t, 't>, Count>;
+type OfTrips<'t> = HashMap<&'t Trip<'t>, Count>;
 type OfLevels<'c> = HashMap<(&'c Category, TimeBin), Count>;
 type OfModes = HashMap<Mode, Count>;
 

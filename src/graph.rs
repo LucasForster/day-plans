@@ -9,22 +9,22 @@ use super::purposes::Purpose;
 use super::trips::Trip;
 
 
-pub struct Graph<'t>(Petgraph::<Node<'t>, Edge<'t>>);
+pub struct Graph<'t>(Petgraph::<Node, Edge<'t>>);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
-pub struct Node<'t> {
-    pub district_id: &'t DistrictId,
+pub struct Node {
+    pub district_id: DistrictId,
     pub purpose: Purpose,
     pub time_bin: TimeBin,
 }
 pub struct Edge<'t> {
-    pub trip: &'t Trip<'t, 't>,
+    pub trip: &'t Trip<'t>,
     pub mode: Mode,
 }
 
 impl<'t> Graph<'t> {
     pub fn new(trips: &'t Vec<Trip>) -> Self {
-        let mut graph = Petgraph::<Node<'t>, Edge<'t>>::new();
-        let mut nodes = HashMap::<Node<'t>, NodeIndex>::new();
+        let mut graph = Petgraph::<Node, Edge<'t>>::new();
+        let mut nodes = HashMap::<Node, NodeIndex>::new();
         for trip in trips {
             for time_bin in TimeBins {
                 for mode in Modes {

@@ -9,9 +9,8 @@ mod purposes;
 mod trips;
 
 fn main() {
-    let districts = districts::load();
     let categories = purposes::load();
-    let trips = trips::load(&categories, &districts);
+    let trips = trips::load(&categories);
     let levels = levels::load(&categories);
     capacities::Capacities::new(&trips, &categories, &levels);
     graph::Graph::new(&trips);
