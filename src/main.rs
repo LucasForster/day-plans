@@ -10,8 +10,7 @@ mod purposes;
 mod trips;
 
 fn main() {
-    let trips = trips::load();
     let levels = levels::load();
-    capacities::Capacities::new(&trips, &levels);
-    graph::Graph::new(&trips);
+    capacities::Capacities::new(&levels);
+    graph::Graph::new();
 }

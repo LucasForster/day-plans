@@ -134,7 +134,7 @@ impl Filter for DistinctActivitesFilter {
     }
     fn expand(&mut self, edge: &Edge, _: &Node) -> Option<bool> {
         // origin of trip includes first activity but is still compatible with activity cycle
-        let index = CATEGORY_ID_MAP.get(&edge.trip.category_id).unwrap().origin as usize;
+        let index = CATEGORY_ID_MAP.get(&edge.trip.category.id).unwrap().origin as usize;
         let prev = self.activities[index];
         self.activities[index] = true;
         Some(!prev)

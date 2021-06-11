@@ -9,6 +9,7 @@ use super::io;
 pub struct Id(u16);
 
 pub struct District {
+    pub id: Id,
     pub x: f64,
     pub y: f64,
     pub info: String,
@@ -37,7 +38,7 @@ fn load() -> HashMap<Id, District> {
         }
         let (x, y) = proj.convert((record[1].parse().unwrap(), record[2].parse().unwrap())).unwrap();
         let info = compose_info(&record);
-        map.insert(id, District { x, y, info });
+        map.insert(id, District { id, x, y, info });
     }
     println!("Loaded {} districts.", map.len());
     map

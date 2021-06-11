@@ -15,7 +15,9 @@ impl Id {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Category {
+    pub id: Id,
     pub origin: Purpose,
     pub destination: Purpose,
 }
@@ -43,7 +45,7 @@ fn load() -> HashMap<Id, Category> {
         }
         let origin = Purpose::from_str(split[0]).unwrap();
         let destination = Purpose::from_str(split[1]).unwrap();
-        map.insert(id, Category { origin, destination });
+        map.insert(id, Category { id, origin, destination });
     }
     println!("Loaded {} categories.", map.len());
     map

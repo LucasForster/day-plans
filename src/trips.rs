@@ -1,58 +1,63 @@
-use super::districts::{Id as DistrictId, parse_id as parse_district_id};
-use super::io;
-use super::categories::{Id as CategoryId, ID_MAP as CATEGORY_ID_MAP};
+use super::{
+    categories, categories::Category,
+    districts, districts::District,
+    io,
+};
+
+use lazy_static::lazy_static;
 
 
-type TripCount = usize;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy)]
 pub enum Transport {
     Public,
     Individual,
 }
 impl Transport {
-    const OV: &'static str = "OV";
-    const IV: &'static str = "IV";
-    const fn to_str(&self) -> &str {
-        match *self {
-            Transport::Public => Transport::OV,
-            Transport::Individual => Transport::IV,
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            Self::Public => "OV",
+            Self::Individual => "IV",
         }
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
+
 pub struct Trip {
+    pub index: usize,
     pub transport: Transport,
-    pub category_id: CategoryId,
-    pub origin: DistrictId,
-    pub destination: DistrictId,
-    pub count: TripCount,
+    pub category: &'static Category,
+    pub origin: &'static District,
+    pub destination: &'static District,
+    pub count: usize,
+    _priv: (),
 }
 
-
-
-pub fn load<'c>() -> Vec<Trip> {
+lazy_static! {
+    pub static ref TRIPS: Vec<Trip> = load();
+}
+fn load() -> Vec<Trip> {
     let mut trips: Vec<Trip> = Vec::new();
     for transport in vec![Transport::Individual, Transport::Public] {
-        for &category_id in CATEGORY_ID_MAP.keys() {
+        for &category_id in categories::ID_MAP.keys() {
             let path = format!("verkehrsfluss/verkehrsflussdaten/{} ascii.{:03}", transport.to_str(), category_id.value());
             let records = io::read_csv(path, true, false, b' ', Some(b'C'));
             for record in records {
-                let count = record[2].parse::<f64>().unwrap().round() as TripCount;
+                let count = record[2].parse::<f64>().unwrap().round() as usize;
                 if count == 0 {
                     continue;
                 }
                 trips.push(Trip {
+                    index: trips.len(),
                     transport,
-                    category_id,
-                    origin: parse_district_id(record[0].parse().unwrap()).unwrap(),
-                    destination: parse_district_id(record[1].parse().unwrap()).unwrap(),
+                    category: categories::ID_MAP.get(&category_id).unwrap(),
+                    origin: districts::ID_MAP.get(&districts::parse_id(record[0].parse().unwrap()).unwrap()).unwrap(),
+                    destination: districts::ID_MAP.get(&districts::parse_id(record[1].parse().unwrap()).unwrap()).unwrap(),
                     count,
+                    _priv: (),
                 });
             }
         }
     }
-    println!("Loaded {} distinct trips, {} total count.", trips.len(), trips.iter().map(|t| t.count).sum::<TripCount>());
+    println!("Loaded {} distinct trips, {} total count.", trips.len(), trips.iter().map(|t| t.count).sum::<usize>());
     trips
 }

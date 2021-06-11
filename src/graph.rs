@@ -1,3 +1,7 @@
+use super::{
+    trips::Trip, trips::TRIPS,
+};
+
 use std::collections::HashMap;
 
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
@@ -7,31 +11,30 @@ use super::districts::Id as DistrictId;
 use super::levels::{TimeBin, TimeBins};
 use super::modes::{Mode, Modes};
 use super::purposes::Purpose;
-use super::trips::Trip;
 
 
-pub struct Graph<'t>(Petgraph::<Node, Edge<'t>>);
+pub struct Graph(Petgraph::<Node, Edge>);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Node {
     pub district_id: DistrictId,
     pub purpose: Purpose,
     pub time_bin: TimeBin,
 }
-pub struct Edge<'t> {
-    pub trip: &'t Trip,
+pub struct Edge {
+    pub trip: &'static Trip,
     pub mode: Mode,
 }
 
-impl<'t> Graph<'t> {
-    pub fn new(trips: &'t Vec<Trip>) -> Self {
-        let mut graph = Petgraph::<Node, Edge<'t>>::new();
+impl<'t> Graph {
+    pub fn new() -> Self {
+        let mut graph = Petgraph::<Node, Edge>::new();
         let mut nodes = HashMap::<Node, NodeIndex>::new();
-        for trip in trips {
+        for trip in TRIPS.iter() {
             for time_bin in TimeBins {
                 for mode in Modes {
-                    let trip_category = CATEGORY_ID_MAP.get(&trip.category_id).unwrap();
+                    let trip_category = CATEGORY_ID_MAP.get(&trip.category.id).unwrap();
                     let source_key = Node {
-                        district_id: trip.origin,
+                        district_id: trip.origin.id,
                         purpose: trip_category.origin,
                         time_bin,
                     };
@@ -41,7 +44,7 @@ impl<'t> Graph<'t> {
                     let destination_time_bin = time_bin + trip_category.origin.duration(); // TODO: leg duration
 
                     let destination_key = Node {
-                        district_id: trip.destination,
+                        district_id: trip.destination.id,
                         purpose: trip_category.destination,
                         time_bin: time_bin + destination_time_bin,
                     };
