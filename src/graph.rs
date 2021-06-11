@@ -1,4 +1,5 @@
 use super::{
+    categories::CATEGORIES,
     trips::Trip, trips::TRIPS,
 };
 
@@ -6,7 +7,6 @@ use std::collections::HashMap;
 
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
 
-use super::categories::ID_MAP as CATEGORY_ID_MAP;
 use super::districts::Id as DistrictId;
 use super::levels::{TimeBin, TimeBins};
 use super::modes::{Mode, Modes};
@@ -32,7 +32,7 @@ impl<'t> Graph {
         for trip in TRIPS.iter() {
             for time_bin in TimeBins {
                 for mode in Modes {
-                    let trip_category = CATEGORY_ID_MAP.get(&trip.category.id).unwrap();
+                    let trip_category = trip.category;
                     let source_key = Node {
                         district_id: trip.origin.id,
                         purpose: trip_category.origin,

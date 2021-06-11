@@ -1,3 +1,7 @@
+use super::{
+    categories::Category, categories::CATEGORIES,
+};
+
 use std::array;
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -5,7 +9,6 @@ use std::ops::{Add, Sub};
 use std::time::Duration;
 
 use super::io;
-use super::categories::{Id as CategoryId, ID_MAP as CATEGORY_ID_MAP};
 
 
 type Level = f64;
@@ -36,6 +39,11 @@ impl Sub for TimeBin {
         }
     }
 }
+impl TimeBin {
+    pub fn value(&self) -> usize {
+        self.0
+    }
+}
 
 pub struct TimeBins;
 impl TimeBins {
@@ -55,19 +63,20 @@ impl IntoIterator for TimeBins {
 
 #[derive(Debug)]
 pub struct Levels {
-    map: HashMap<CategoryId, [Level; TimeBins::COUNT]>,
+    levels: Vec<[Level; TimeBins::COUNT]>
 }
 impl Levels {
-    pub fn get_level(&self, category: CategoryId, time_bin: TimeBin) -> Level {
-        self.map.get(&category).unwrap()[time_bin.0]
+    pub fn get_level(&self, category: &Category, time_bin: TimeBin) -> Level {
+        self.levels[category.index][time_bin.value()]
     }
 }
 
 
 pub fn load<'c>() -> Levels {
-    let mut map: HashMap<CategoryId, [Level; TimeBins::COUNT]> = HashMap::new();
-    for category_id in CATEGORY_ID_MAP.keys() {
-        let path = format!("verkehrsfluss/verkehrsflussdaten/pegel{}.txt", category_id.value());
+    let mut vec: Vec<[Level; TimeBins::COUNT]> = Vec::new();
+    for category in CATEGORIES.iter() {
+        assert!(category.index == vec.len());
+        let path = format!("verkehrsfluss/verkehrsflussdaten/pegel{}.txt", category.id);
         let record = &io::read_csv(path, true, false, b';', Some(b'/'))[0];
         let mut levels: Vec<Level> = Vec::new();
         for time_bin in TimeBins {
@@ -76,10 +85,10 @@ pub fn load<'c>() -> Levels {
         let sum: Level = levels.iter().fold(0.0, |sum, level| sum + level);
         let norm: Vec<Level> = levels.iter().map(|level| level / sum).collect();
         let array: [Level; TimeBins::COUNT] = norm.try_into().unwrap();
-        map.insert(*category_id, array);
+        vec.push(array);
     }
-    println!("Loaded {} levels, each for {} time bins.", map.len(), TimeBins::COUNT);
+    println!("Loaded {} levels, each for {} time bins.", vec.len(), TimeBins::COUNT);
     Levels {
-        map
+        levels: vec
     }
 }

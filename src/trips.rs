@@ -1,5 +1,5 @@
 use super::{
-    categories, categories::Category,
+    categories::Category, categories::CATEGORIES,
     districts, districts::District,
     io,
 };
@@ -38,8 +38,8 @@ lazy_static! {
 fn load() -> Vec<Trip> {
     let mut trips: Vec<Trip> = Vec::new();
     for transport in vec![Transport::Individual, Transport::Public] {
-        for &category_id in categories::ID_MAP.keys() {
-            let path = format!("verkehrsfluss/verkehrsflussdaten/{} ascii.{:03}", transport.to_str(), category_id.value());
+        for category in CATEGORIES.iter() {
+            let path = format!("verkehrsfluss/verkehrsflussdaten/{} ascii.{:03}", transport.to_str(), category.id);
             let records = io::read_csv(path, true, false, b' ', Some(b'C'));
             for record in records {
                 let count = record[2].parse::<f64>().unwrap().round() as usize;
@@ -49,7 +49,7 @@ fn load() -> Vec<Trip> {
                 trips.push(Trip {
                     index: trips.len(),
                     transport,
-                    category: categories::ID_MAP.get(&category_id).unwrap(),
+                    category,
                     origin: districts::ID_MAP.get(&districts::parse_id(record[0].parse().unwrap()).unwrap()).unwrap(),
                     destination: districts::ID_MAP.get(&districts::parse_id(record[1].parse().unwrap()).unwrap()).unwrap(),
                     count,

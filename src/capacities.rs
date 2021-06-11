@@ -1,5 +1,5 @@
 use super::{
-    categories, categories::Category,
+    categories::Category, categories::CATEGORIES,
     trips::Trip, trips::TRIPS,
 };
 
@@ -15,25 +15,22 @@ type OfModes = HashMap<Mode, Count>;
 
 pub struct Capacities {
     of_trips: Vec<Count>,
-    pub of_levels: OfLevels,
+    of_levels: Vec<[Count; TimeBins::COUNT]>,
     pub of_modes: OfModes,
 }
 impl Capacities {
     pub fn new<'l>(levels: &'l Levels) -> Capacities {
-        let mut of_levels = OfLevels::new();
+        let mut of_levels: Vec<[Count; TimeBins::COUNT]> = Vec::new();
         {
-            let mut generators: HashMap<categories::Id, Generator<TimeBin>> = HashMap::new();
-            for &category_id in categories::ID_MAP.keys() {
-                let mut input: Vec<(TimeBin, Share)> = Vec::new();
-                for time_bin in TimeBins {
-                    input.push((time_bin, levels.get_level(category_id, time_bin)));
+            for category in CATEGORIES.iter() {
+                assert!(category.index == of_levels.len());
+                let mut generator = Generator::new(
+                    TimeBins.into_iter().map(|time_bin| (time_bin, levels.get_level(category, time_bin))).collect());
+                let mut counts = [0 as Count; TimeBins::COUNT];
+                let total_trip_count: usize = TRIPS.iter().filter(|&trip| trip.category.eq(category)).map(|trip| trip.count).sum();
+                for _ in 0..total_trip_count {
+                    counts[generator.next().unwrap().value()] += 1;
                 }
-                generators.insert(category_id, Generator::new(input));
-            }
-            for trip in TRIPS.iter() {
-                let time_bin = generators.get_mut(&trip.category.id).unwrap().next().unwrap();
-                let curr_count: Count = *of_levels.get(&(*trip.category, time_bin)).unwrap_or(&0);
-                of_levels.insert((*trip.category, time_bin), curr_count + 1);
             }
         }
         let mut of_modes: OfModes = OfModes::new();
@@ -52,6 +49,13 @@ impl Capacities {
             of_modes,
         }
     }
+    pub fn of_trip(&self, trip: &Trip) -> Count {
+        self.of_trips[trip.index]
+    }
+    pub fn of_level(&self, category: &Category, time_bin: TimeBin) -> Count {
+        self.of_levels[category.index][time_bin.value()]
+    }
+    // TODO: reduce
 }
 
 
