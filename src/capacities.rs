@@ -1,22 +1,18 @@
 use super::{
     categories::Category, categories::CATEGORIES,
+    modes::Mode, modes::MODES,
     trips::Trip, trips::TRIPS,
 };
 
-use std::collections::HashMap;
-
 use super::levels::{Levels, TimeBin, TimeBins};
-use super::modes::{Mode, Modes};
 
 
 type Count = usize;
-type OfLevels = HashMap<(Category, TimeBin), Count>;
-type OfModes = HashMap<Mode, Count>;
 
 pub struct Capacities {
     of_trips: Vec<Count>,
     of_levels: Vec<[Count; TimeBins::COUNT]>,
-    pub of_modes: OfModes,
+    of_modes: Vec<Count>,
 }
 impl Capacities {
     pub fn new<'l>(levels: &'l Levels) -> Capacities {
@@ -33,14 +29,12 @@ impl Capacities {
                 }
             }
         }
-        let mut of_modes: OfModes = OfModes::new();
+        let mut of_modes: Vec<Count> = vec![0; MODES.len()];
         {
-            let input: Vec<(Mode, Share)> = Modes.into_iter().map(|mode| (mode, mode.share())).collect();
+            let input: Vec<(&Mode, Share)> = MODES.iter().map(|mode| (mode, mode.share)).collect();
             let mut generator = Generator::new(input);
-            for _ in TRIPS.iter() {
-                let mode = generator.next().unwrap();
-                let curr_count: Count = *of_modes.get(&mode).unwrap_or(&0);
-                of_modes.insert(mode, curr_count + 1);
+            for mode in generator.take(TRIPS.len()) {
+                of_modes[mode.index] += 1;
             }
         }
         Capacities {

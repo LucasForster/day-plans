@@ -1,28 +1,28 @@
-use phf::phf_map;
+use super::trips::Transport;
+use lazy_static::lazy_static;
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
-pub struct Mode(&'static str);
-impl Mode {
-    pub fn share(&self) -> f64 {
-        *Modes::SHARES.get(self.0).unwrap()
-    }
+
+pub struct Mode {
+    pub index: usize,
+    pub name: &'static str,
+    pub share: f64,
+    pub transport: Transport,
+    _priv: (),
 }
 
-pub struct Modes;
-impl Modes {
-    const SHARES: phf::Map<&'static str, f64> = phf_map! {
-        "Feet" => 0.298f64,
-        "Bike" => 0.110f64,
-        "Pt" => 0.130f64,
-        "CarDriver" => 0.336f64,
-        "CarPassenger" => 0.126f64,
+lazy_static! {
+    pub static ref MODES: Vec<Mode> = {
+        let mut vec: Vec<Mode> = Vec::new();
+        /*
+        * Source: "Statistisches Jahrbuch", Stadt Aachen, 2017, p.104
+        * Copyright: Stadt Aachen FB02/200
+        * License: "Nachdruck oder weitere Veröffentlichung mit Quellenangabe gestattet"
+        */
+        vec.push(Mode { index: vec.len(), name: "Feet", share: 0.298, transport: Transport::Individual, _priv: () });
+        vec.push(Mode { index: vec.len(), name: "Bike", share: 0.110, transport: Transport::Individual, _priv: () });
+        vec.push(Mode { index: vec.len(), name: "Pt", share: 0.130, transport: Transport::Public, _priv: () });
+        vec.push(Mode { index: vec.len(), name: "CarDriver", share: 0.336, transport: Transport::Individual, _priv: () });
+        vec.push(Mode { index: vec.len(), name: "CarPassenger", share: 0.126, transport: Transport::Individual, _priv: () });
+        vec
     };
-}
-impl IntoIterator for Modes {
-    type Item = Mode;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        Self::SHARES.keys().map(|key| Mode(key)).collect::<Vec<Self::Item>>().into_iter()
-    }
 }

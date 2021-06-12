@@ -1,6 +1,7 @@
 use super::{
     categories::CATEGORIES,
     districts::District,
+    modes::Mode, modes::MODES,
     trips::Trip, trips::TRIPS,
 };
 
@@ -9,7 +10,6 @@ use std::collections::HashMap;
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
 
 use super::levels::{TimeBin, TimeBins};
-use super::modes::{Mode, Modes};
 use super::purposes::Purpose;
 
 
@@ -22,7 +22,7 @@ pub struct Node {
 }
 pub struct Edge {
     pub trip: &'static Trip,
-    pub mode: Mode,
+    pub mode: &'static Mode,
 }
 
 impl<'t> Graph {
@@ -31,7 +31,7 @@ impl<'t> Graph {
         let mut nodes = HashMap::<Node, NodeIndex>::new();
         for trip in TRIPS.iter() {
             for time_bin in TimeBins {
-                for mode in Modes {
+                for mode in MODES.iter() {
                     let trip_category = trip.category;
                     let source_key = Node {
                         district: trip.origin,
