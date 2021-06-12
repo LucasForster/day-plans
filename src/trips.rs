@@ -50,8 +50,8 @@ fn load() -> Vec<Trip> {
                     index: trips.len(),
                     transport,
                     category,
-                    origin: districts::ID_MAP.get(&districts::parse_id(record[0].parse().unwrap()).unwrap()).unwrap(),
-                    destination: districts::ID_MAP.get(&districts::parse_id(record[1].parse().unwrap()).unwrap()).unwrap(),
+                    origin: districts::parse_id(record[0].parse().unwrap()).unwrap(),
+                    destination: districts::parse_id(record[1].parse().unwrap()).unwrap(),
                     count,
                     _priv: (),
                 });

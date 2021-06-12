@@ -1,5 +1,6 @@
 use super::{
     categories::CATEGORIES,
+    districts::District,
     trips::Trip, trips::TRIPS,
 };
 
@@ -7,7 +8,6 @@ use std::collections::HashMap;
 
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
 
-use super::districts::Id as DistrictId;
 use super::levels::{TimeBin, TimeBins};
 use super::modes::{Mode, Modes};
 use super::purposes::Purpose;
@@ -16,7 +16,7 @@ use super::purposes::Purpose;
 pub struct Graph(Petgraph::<Node, Edge>);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Node {
-    pub district_id: DistrictId,
+    pub district: &'static District,
     pub purpose: Purpose,
     pub time_bin: TimeBin,
 }
@@ -34,7 +34,7 @@ impl<'t> Graph {
                 for mode in Modes {
                     let trip_category = trip.category;
                     let source_key = Node {
-                        district_id: trip.origin.id,
+                        district: trip.origin,
                         purpose: trip_category.origin,
                         time_bin,
                     };
@@ -44,7 +44,7 @@ impl<'t> Graph {
                     let destination_time_bin = time_bin + trip_category.origin.duration(); // TODO: leg duration
 
                     let destination_key = Node {
-                        district_id: trip.destination.id,
+                        district: trip.destination,
                         purpose: trip_category.destination,
                         time_bin: time_bin + destination_time_bin,
                     };
