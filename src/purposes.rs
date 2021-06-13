@@ -1,7 +1,6 @@
 use std::str::FromStr;
 use std::time::Duration;
 
-
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum Purpose {
     Home,
@@ -10,7 +9,7 @@ pub enum Purpose {
     School,
     Service,
     Shopping,
-    COUNT
+    COUNT,
 }
 impl FromStr for Purpose {
     type Err = String;
@@ -35,8 +34,16 @@ impl FromStr for Purpose {
 }
 impl Purpose {
     pub fn duration(&self) -> Duration {
-        macro_rules! hours {($h:expr) => { minutes!($h*60) }}
-        macro_rules! minutes {($m:expr) => { Duration::from_secs($m*60) }}
+        macro_rules! hours {
+            ($h:expr) => {
+                minutes!($h * 60)
+            };
+        }
+        macro_rules! minutes {
+            ($m:expr) => {
+                Duration::from_secs($m * 60)
+            };
+        }
         match self {
             Self::Home => hours!(8),
             Self::Work => hours!(8),
@@ -44,7 +51,7 @@ impl Purpose {
             Self::Leisure => hours!(2),
             Self::Shopping => hours!(1),
             Self::Service => minutes!(30),
-            Self::COUNT => panic!()
+            Self::COUNT => panic!(),
         }
     }
 }

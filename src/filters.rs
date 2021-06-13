@@ -1,16 +1,14 @@
 use super::{
-    graph::{Node, Edge},
+    graph::{Edge, Node},
     purposes::Purpose,
     time_bins::TimeBin,
 };
-
 
 trait Filter: Copy {
     type Param;
     fn new(source: &Node, param: Self::Param) -> Self;
     fn expand(&mut self, edge: &Edge, target: &Node) -> Option<bool>;
 }
-
 
 // LENGTH
 #[derive(Clone, Copy)]
@@ -26,17 +24,14 @@ pub struct LengthFilterParam {
 impl Filter for LengthFilter {
     type Param = LengthFilterParam;
     fn new(_: &Node, param: Self::Param) -> Self {
-        LengthFilter {
-            length: 0,
-            param,
-        }
+        LengthFilter { length: 0, param }
     }
     fn expand(&mut self, _: &Edge, _: &Node) -> Option<bool> {
         self.length += 1;
         match self.length {
             length if length > self.param.max_length => Some(false),
             length if length < self.param.min_length => None,
-            _ => Some(true)
+            _ => Some(true),
         }
     }
 }
@@ -100,7 +95,7 @@ pub struct ActivityCycleFilter {
 }
 impl Filter for ActivityCycleFilter {
     type Param = ();
-    fn new (node: &Node, _: Self::Param) -> Self {
+    fn new(node: &Node, _: Self::Param) -> Self {
         ActivityCycleFilter {
             first_activity: node.purpose,
         }
@@ -121,9 +116,9 @@ pub struct DistinctActivitesFilter {
 }
 impl Filter for DistinctActivitesFilter {
     type Param = ();
-    fn new (_: &Node, _: Self::Param) -> Self {
+    fn new(_: &Node, _: Self::Param) -> Self {
         DistinctActivitesFilter {
-            activities: [false; Purpose::COUNT as usize]
+            activities: [false; Purpose::COUNT as usize],
         }
     }
     fn expand(&mut self, edge: &Edge, _: &Node) -> Option<bool> {

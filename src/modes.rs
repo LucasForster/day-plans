@@ -1,7 +1,6 @@
 use super::trips::Transport;
 use lazy_static::lazy_static;
 
-
 pub struct Mode {
     pub index: usize,
     pub name: &'static str,

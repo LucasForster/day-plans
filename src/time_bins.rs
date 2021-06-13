@@ -1,10 +1,9 @@
+use lazy_static::lazy_static;
 use std::{
     convert::TryInto,
     ops::{Add, Sub},
     time::Duration,
 };
-use lazy_static::lazy_static;
-
 
 pub const COUNT: usize = 48; // instead of u8 for external use
 const TIME_BIN_SECS: usize = 30 * 60;
@@ -35,5 +34,9 @@ impl TimeBin {
 }
 
 lazy_static! {
-    pub static ref TIME_BINS: [TimeBin; COUNT] = (0..COUNT).map(|i| TimeBin(i as u8)).collect::<Vec<TimeBin>>().try_into().unwrap();
+    pub static ref TIME_BINS: [TimeBin; COUNT] = (0..COUNT)
+        .map(|i| TimeBin(i as u8))
+        .collect::<Vec<TimeBin>>()
+        .try_into()
+        .unwrap();
 }

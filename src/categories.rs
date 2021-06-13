@@ -1,10 +1,6 @@
-use super::{
-    io,
-    purposes::Purpose,
-};
-use std::str::FromStr;
+use super::{io, purposes::Purpose};
 use lazy_static::lazy_static;
-
+use std::str::FromStr;
 
 pub struct Category {
     pub index: usize,
@@ -20,23 +16,38 @@ impl PartialEq for Category {
 }
 impl Eq for Category {}
 
-
 lazy_static! {
     pub static ref CATEGORIES: Vec<Category> = load();
 }
 
 fn load() -> Vec<Category> {
-    let records = io::read_csv("verkehrsfluss/verkehrsflussdaten/categoryInformation.txt", false, false, b';', None);
+    let records = io::read_csv(
+        "verkehrsfluss/verkehrsflussdaten/categoryInformation.txt",
+        false,
+        false,
+        b';',
+        None,
+    );
     let mut categories: Vec<Category> = Vec::new();
     for record in records {
         let split = record[2].split("->").collect::<Vec<&str>>();
         let id: u8 = record[0].parse().unwrap();
-        if categories.iter().find(|&category| category.id == id).is_some() {
+        if categories
+            .iter()
+            .find(|&category| category.id == id)
+            .is_some()
+        {
             panic!("Duplicate category id!");
         }
         let origin = Purpose::from_str(split[0]).unwrap();
         let destination = Purpose::from_str(split[1]).unwrap();
-        categories.push(Category { index: categories.len(), id, origin, destination, _priv: () });
+        categories.push(Category {
+            index: categories.len(),
+            id,
+            origin,
+            destination,
+            _priv: (),
+        });
     }
     println!("Loaded {} categories.", categories.len());
     categories

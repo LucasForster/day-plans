@@ -1,7 +1,6 @@
 use super::io;
-use std::hash::{Hash, Hasher};
 use lazy_static::lazy_static;
-
+use std::hash::{Hash, Hasher};
 
 #[derive(Debug)]
 pub struct Id(u16);
@@ -36,15 +35,30 @@ pub fn parse_id(id: u16) -> Option<&'static District> {
 }
 
 fn load() -> Vec<District> {
-    let records = io::read_csv("verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat", true, false, b'\t', None);
+    let records = io::read_csv(
+        "verkehrsfluss/verkehrsfluss-zusatz/qz-gebiet-nl.dat",
+        true,
+        false,
+        b'\t',
+        None,
+    );
     let proj = proj::Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
     let mut vec: Vec<District> = Vec::new();
     for record in records {
         let id = Id(record[0].parse().unwrap());
         assert!(vec.iter().find(|&district| district.id.0 == id.0).is_none());
-        let (x, y) = proj.convert((record[1].parse().unwrap(), record[2].parse().unwrap())).unwrap();
+        let (x, y) = proj
+            .convert((record[1].parse().unwrap(), record[2].parse().unwrap()))
+            .unwrap();
         let info = compose_info(&record);
-        vec.push(District { index: vec.len(), id, x, y, info, _priv: () });
+        vec.push(District {
+            index: vec.len(),
+            id,
+            x,
+            y,
+            info,
+            _priv: (),
+        });
     }
     println!("Loaded {} districts.", vec.len());
     vec

@@ -1,10 +1,5 @@
-use super::{
-    categories::Category, categories::CATEGORIES,
-    io,
-    time_bins,
-};
+use super::{categories::Category, categories::CATEGORIES, io, time_bins};
 use lazy_static::lazy_static;
-
 
 type Levels = [f64; time_bins::COUNT];
 
@@ -27,6 +22,10 @@ fn load() -> Vec<Levels> {
         }
         vec.push(values);
     }
-    println!("Loaded {} levels, each for {} time bins.", vec.len(), time_bins::COUNT);
+    println!(
+        "Loaded {} levels, each for {} time bins.",
+        vec.len(),
+        time_bins::COUNT
+    );
     vec
 }

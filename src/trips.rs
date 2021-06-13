@@ -1,10 +1,5 @@
-use super::{
-    categories::Category, categories::CATEGORIES,
-    districts, districts::District,
-    io,
-};
+use super::{categories::Category, categories::CATEGORIES, districts, districts::District, io};
 use lazy_static::lazy_static;
-
 
 #[derive(Clone, Copy)]
 pub enum Transport {
@@ -19,7 +14,6 @@ impl Transport {
         }
     }
 }
-
 
 pub struct Trip {
     pub index: usize,
@@ -38,7 +32,11 @@ fn load() -> Vec<Trip> {
     let mut trips: Vec<Trip> = Vec::new();
     for transport in vec![Transport::Individual, Transport::Public] {
         for category in CATEGORIES.iter() {
-            let path = format!("verkehrsfluss/verkehrsflussdaten/{} ascii.{:03}", transport.to_str(), category.id);
+            let path = format!(
+                "verkehrsfluss/verkehrsflussdaten/{} ascii.{:03}",
+                transport.to_str(),
+                category.id
+            );
             let records = io::read_csv(path, true, false, b' ', Some(b'C'));
             for record in records {
                 let count = record[2].parse::<f64>().unwrap().round() as usize;
@@ -57,6 +55,10 @@ fn load() -> Vec<Trip> {
             }
         }
     }
-    println!("Loaded {} distinct trips, {} total count.", trips.len(), trips.iter().map(|t| t.count).sum::<usize>());
+    println!(
+        "Loaded {} distinct trips, {} total count.",
+        trips.len(),
+        trips.iter().map(|t| t.count).sum::<usize>()
+    );
     trips
 }
