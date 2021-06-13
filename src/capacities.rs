@@ -2,7 +2,7 @@ use super::{
     categories::Category, categories::CATEGORIES,
     levels,
     modes::Mode, modes::MODES,
-    time_bins, time_bins::TimeBin, time_bins::TIME_BINS,
+    time_bins, time_bins::TimeBin,
     trips::Trip, trips::TRIPS,
 };
 use std::convert::TryInto;
@@ -27,13 +27,24 @@ impl Capacities {
         let of_modes: Vec<Count> = sum_safe_round(&MODES.iter().map(|mode| mode.share * (TRIPS.len() as f64)).collect());
         Capacities { of_trips, of_levels, of_modes }
     }
-    pub fn of_trip(&self, trip: &Trip) -> Count {
+    pub fn get_trip(&self, trip: &Trip) -> Count {
         self.of_trips[trip.index]
     }
-    pub fn of_level(&self, category: &Category, time_bin: TimeBin) -> Count {
+    pub fn get_level(&self, category: &Category, time_bin: TimeBin) -> Count {
         self.of_levels[category.index][time_bin.value()]
     }
-    // TODO: reduce
+    pub fn get_mode(&self, mode: Mode) -> Count {
+        self.of_modes[mode.index]
+    }
+    pub fn set_trip(&mut self, trip: &Trip, count: Count) {
+        self.of_trips[trip.index] = count;
+    }
+    pub fn set_level(&mut self, category: &Category, time_bin: TimeBin, count: Count) {
+        self.of_levels[category.index][time_bin.value()] = count;
+    }
+    pub fn set_mode(&mut self, mode: Mode, count: Count) {
+        self.of_modes[mode.index] = count;
+    }
 }
 
 
