@@ -2,9 +2,7 @@ use super::{
     io,
     purposes::Purpose,
 };
-
 use std::str::FromStr;
-
 use lazy_static::lazy_static;
 
 
