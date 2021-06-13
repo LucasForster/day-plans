@@ -1,16 +1,7 @@
 use super::{
-    categories::CATEGORIES,
-    modes, modes::Mode,
-    time_bins::TimeBin,
-};
-
-use std::convert::TryInto;
-
-use super::{
-    capacities::Capacities,
     graph::{Node, Edge},
     purposes::Purpose,
-    trips::Trip,
+    time_bins::TimeBin,
 };
 
 
