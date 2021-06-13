@@ -24,7 +24,7 @@ impl Capacities {
             let values = levels::get_levels(category).iter().map(|share| share * total).collect::<Vec<f64>>();
             of_levels.push(sum_safe_round(&values).try_into().unwrap());
         }
-        let of_modes: Vec<Count> = sum_safe_round(&MODES.iter().map(|mode| mode.share * (TRIPS.len() as f64)).collect());
+        let of_modes: Vec<Count> = sum_safe_round(&MODES.iter().map(|mode| mode.share * (TRIPS.len() as f64)).collect::<Vec<f64>>());
         Capacities { of_trips, of_levels, of_modes }
     }
     pub fn get_trip(&self, trip: &Trip) -> Count {
@@ -48,7 +48,7 @@ impl Capacities {
 }
 
 
-fn sum_safe_round(values: &Vec<f64>) -> Vec<usize> {
+fn sum_safe_round(values: &[f64]) -> Vec<usize> {
     let sum: usize = values.iter().sum::<f64>().round() as usize;
     let mut round_values: Vec<usize> = values.iter().map(|x| x.floor() as usize).collect();
     let mut enumerated_diff: Vec<(usize, f64)> = values.iter().enumerate().map(|(i, x)| (i, x - (round_values[i] as f64))).collect();
