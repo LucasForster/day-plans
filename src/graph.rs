@@ -1,16 +1,15 @@
 use super::{
-    categories::CATEGORIES,
     districts::District,
     modes::Mode, modes::MODES,
+    purposes::Purpose,
     time_bins::TimeBin, time_bins::TIME_BINS,
     trips::Trip, trips::TRIPS,
 };
-
 use std::collections::HashMap;
-
-use petgraph::graph::{Graph as Petgraph, NodeIndex};
-
-use super::purposes::Purpose;
+use petgraph::graph::{
+    Graph as Petgraph,
+    NodeIndex,
+};
 
 
 pub struct Graph(Petgraph::<Node, Edge>);
