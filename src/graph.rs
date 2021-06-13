@@ -2,6 +2,7 @@ use super::{
     categories::CATEGORIES,
     districts::District,
     modes::Mode, modes::MODES,
+    time_bins::TimeBin, time_bins::TIME_BINS,
     trips::Trip, trips::TRIPS,
 };
 
@@ -9,7 +10,6 @@ use std::collections::HashMap;
 
 use petgraph::graph::{Graph as Petgraph, NodeIndex};
 
-use super::levels::{TimeBin, TimeBins};
 use super::purposes::Purpose;
 
 
@@ -30,23 +30,21 @@ impl<'t> Graph {
         let mut graph = Petgraph::<Node, Edge>::new();
         let mut nodes = HashMap::<Node, NodeIndex>::new();
         for trip in TRIPS.iter() {
-            for time_bin in TimeBins {
+            for time_bin in TIME_BINS.into_iter().copied() {
                 for mode in MODES.iter() {
                     let trip_category = trip.category;
                     let source_key = Node {
                         district: trip.origin,
                         purpose: trip_category.origin,
-                        time_bin,
+                        time_bin
                     };
                     let source_index: NodeIndex = *nodes.entry(source_key)
                         .or_insert(graph.add_node(source_key));
 
-                    let destination_time_bin = time_bin + trip_category.origin.duration(); // TODO: leg duration
-
                     let destination_key = Node {
                         district: trip.destination,
                         purpose: trip_category.destination,
-                        time_bin: time_bin + destination_time_bin,
+                        time_bin: time_bin + trip_category.origin.duration(), // TODO: leg duration
                     };
                     let destination_index: NodeIndex = *nodes.entry(destination_key)
                         .or_insert(graph.add_node(destination_key));

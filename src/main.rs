@@ -7,10 +7,10 @@ mod io;
 mod levels;
 mod modes;
 mod purposes;
+mod time_bins;
 mod trips;
 
 fn main() {
-    let levels = levels::load();
-    capacities::Capacities::new(&levels);
+    capacities::Capacities::new();
     graph::Graph::new();
 }

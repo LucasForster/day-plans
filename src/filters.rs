@@ -1,6 +1,7 @@
 use super::{
     categories::CATEGORIES,
     modes, modes::Mode,
+    time_bins::TimeBin,
 };
 
 use std::convert::TryInto;
@@ -8,7 +9,6 @@ use std::convert::TryInto;
 use super::{
     capacities::Capacities,
     graph::{Node, Edge},
-    levels::{TimeBin, TimeBins},
     purposes::Purpose,
     trips::Trip,
 };
@@ -92,7 +92,7 @@ impl Filter for DurationFilter {
         }
     }
     fn expand(&mut self, _: &Edge, target: &Node) -> Option<bool> {
-        self.time_bin_count += target.time_bin - self.last_time_bin;
+        self.time_bin_count += target.time_bin.value() - self.last_time_bin.value();
         self.last_time_bin = target.time_bin;
         match self.time_bin_count {
             count if count > self.param.max_time_bin_count => Some(false),

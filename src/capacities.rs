@@ -1,28 +1,28 @@
 use super::{
     categories::Category, categories::CATEGORIES,
+    levels,
     modes::Mode, modes::MODES,
+    time_bins, time_bins::TimeBin, time_bins::TIME_BINS,
     trips::Trip, trips::TRIPS,
 };
-
-use super::levels::{Levels, TimeBin, TimeBins};
 
 
 type Count = usize;
 
 pub struct Capacities {
     of_trips: Vec<Count>,
-    of_levels: Vec<[Count; TimeBins::COUNT]>,
+    of_levels: Vec<[Count; time_bins::COUNT]>,
     of_modes: Vec<Count>,
 }
 impl Capacities {
-    pub fn new<'l>(levels: &'l Levels) -> Capacities {
-        let mut of_levels: Vec<[Count; TimeBins::COUNT]> = Vec::new();
+    pub fn new() -> Capacities {
+        let mut of_levels: Vec<[Count; time_bins::COUNT]> = Vec::new();
         {
             for category in CATEGORIES.iter() {
                 assert!(category.index == of_levels.len());
-                let mut generator = Generator::new(
-                    TimeBins.into_iter().map(|time_bin| (time_bin, levels.get_level(category, time_bin))).collect());
-                let mut counts = [0 as Count; TimeBins::COUNT];
+                let mut generator: Generator<TimeBin> = Generator::new(
+                    TIME_BINS.into_iter().copied().zip(levels::get_levels(category).to_vec().into_iter()).collect());
+                let mut counts = [0 as Count; time_bins::COUNT];
                 let total_trip_count: usize = TRIPS.iter().filter(|&trip| trip.category.eq(category)).map(|trip| trip.count).sum();
                 for _ in 0..total_trip_count {
                     counts[generator.next().unwrap().value()] += 1;
