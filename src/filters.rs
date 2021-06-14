@@ -19,6 +19,71 @@ pub trait Filter: Copy {
     ) -> Option<bool>;
 }
 
+#[derive(Clone, Copy)]
+pub struct CombinedFilter {
+    length: LengthFilter,
+    first_activity: FirstActivityFilter,
+    duration: DurationFilter,
+    activity_cycle: ActivityCycleFilter,
+    distinct_activities: DistinctActivitesFilter,
+    capacity: CapacityFilter,
+}
+impl Filter for CombinedFilter {
+    type Param = ();
+    fn new(source: &Node, _: Self::Param) -> Self {
+        CombinedFilter {
+            length: LengthFilter::new(
+                source,
+                LengthFilterParam {
+                    min_length: 2,
+                    max_length: 6,
+                },
+            ),
+            first_activity: FirstActivityFilter::new(
+                source,
+                FirstActivityFilterParam {
+                    activity: Purpose::Home,
+                },
+            ),
+            duration: DurationFilter::new(
+                source,
+                DurationFilterParam {
+                    min_time_bin_count: 40,
+                    max_time_bin_count: 48,
+                },
+            ),
+            activity_cycle: ActivityCycleFilter::new(source, ()),
+            distinct_activities: DistinctActivitesFilter::new(source, ()),
+            capacity: CapacityFilter::new(source, ()),
+        }
+    }
+    fn expand(
+        &mut self,
+        edge: &Edge,
+        target: &Node,
+        graph: &Arc<Graph>,
+        capacities: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool> {
+        let mut result = Some(true);
+        macro_rules! update_result {
+            ($filter:expr) => {
+                match $filter.expand(edge, target, graph, capacities) {
+                    Some(false) => return Some(false),
+                    None => result = None,
+                    _ => {}
+                }
+            };
+        }
+        update_result!(self.length);
+        update_result!(self.first_activity);
+        update_result!(self.duration);
+        update_result!(self.activity_cycle);
+        update_result!(self.distinct_activities);
+        update_result!(self.capacity);
+        result
+    }
+}
+
 // LENGTH
 #[derive(Clone, Copy)]
 pub struct LengthFilter {
