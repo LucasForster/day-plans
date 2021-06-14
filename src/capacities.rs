@@ -44,7 +44,7 @@ impl Capacities {
     pub fn get_level(&self, category: &Category, time_bin: TimeBin) -> Count {
         self.of_levels[category.index][time_bin.value()]
     }
-    pub fn get_mode(&self, mode: Mode) -> Count {
+    pub fn get_mode(&self, mode: &Mode) -> Count {
         self.of_modes[mode.index]
     }
     pub fn set_trip(&mut self, trip: &Trip, count: Count) {

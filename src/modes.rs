@@ -9,6 +9,8 @@ pub struct Mode {
     _priv: (),
 }
 
+pub const COUNT: usize = 5;
+
 lazy_static! {
     pub static ref MODES: Vec<Mode> = {
         let mut vec: Vec<Mode> = Vec::new();
@@ -22,6 +24,7 @@ lazy_static! {
         vec.push(Mode { index: vec.len(), name: "Pt", share: 0.130, transport: Transport::Public, _priv: () });
         vec.push(Mode { index: vec.len(), name: "CarDriver", share: 0.336, transport: Transport::Individual, _priv: () });
         vec.push(Mode { index: vec.len(), name: "CarPassenger", share: 0.126, transport: Transport::Individual, _priv: () });
+        assert!(vec.len() == COUNT);
         vec
     };
 }
