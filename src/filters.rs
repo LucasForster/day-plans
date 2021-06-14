@@ -7,7 +7,7 @@ use super::{
 };
 use std::sync::{Arc, RwLockReadGuard};
 
-trait Filter: Copy {
+pub trait Filter: Copy {
     type Param;
     fn new(source: &Node, param: Self::Param) -> Self;
     fn expand(
@@ -27,8 +27,8 @@ pub struct LengthFilter {
 }
 #[derive(Clone, Copy)]
 pub struct LengthFilterParam {
-    max_length: usize,
-    min_length: usize,
+    pub max_length: usize,
+    pub min_length: usize,
 }
 impl Filter for LengthFilter {
     type Param = LengthFilterParam;
@@ -57,7 +57,7 @@ pub struct FirstActivityFilter {
     valid: bool,
 }
 pub struct FirstActivityFilterParam {
-    activity: Purpose,
+    pub activity: Purpose,
 }
 impl Filter for FirstActivityFilter {
     type Param = FirstActivityFilterParam;
@@ -86,8 +86,8 @@ pub struct DurationFilter {
 }
 #[derive(Clone, Copy)]
 pub struct DurationFilterParam {
-    max_time_bin_count: usize,
-    min_time_bin_count: usize,
+    pub max_time_bin_count: usize,
+    pub min_time_bin_count: usize,
 }
 impl Filter for DurationFilter {
     type Param = DurationFilterParam;
