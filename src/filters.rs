@@ -10,7 +10,13 @@ use std::sync::{Arc, RwLockReadGuard};
 trait Filter: Copy {
     type Param;
     fn new(source: &Node, param: Self::Param) -> Self;
-    fn expand(&mut self, edge: &Edge, target: &Node, graph: &Arc<Graph>, capacities: &RwLockReadGuard<Capacities>) -> Option<bool>;
+    fn expand(
+        &mut self,
+        edge: &Edge,
+        target: &Node,
+        graph: &Arc<Graph>,
+        capacities: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool>;
 }
 
 // LENGTH
@@ -29,7 +35,13 @@ impl Filter for LengthFilter {
     fn new(_: &Node, param: Self::Param) -> Self {
         LengthFilter { length: 0, param }
     }
-    fn expand(&mut self, _: &Edge, _: &Node, _: &Arc<Graph>, _: &RwLockReadGuard<Capacities>) -> Option<bool> {
+    fn expand(
+        &mut self,
+        _: &Edge,
+        _: &Node,
+        _: &Arc<Graph>,
+        _: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool> {
         self.length += 1;
         match self.length {
             length if length > self.param.max_length => Some(false),
@@ -54,7 +66,13 @@ impl Filter for FirstActivityFilter {
             valid: node.purpose == param.activity,
         }
     }
-    fn expand(&mut self, _: &Edge, _: &Node, _: &Arc<Graph>, _: &RwLockReadGuard<Capacities>) -> Option<bool> {
+    fn expand(
+        &mut self,
+        _: &Edge,
+        _: &Node,
+        _: &Arc<Graph>,
+        _: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool> {
         Some(self.valid)
     }
 }
@@ -80,7 +98,13 @@ impl Filter for DurationFilter {
             param,
         }
     }
-    fn expand(&mut self, _: &Edge, target: &Node, _: &Arc<Graph>, _: &RwLockReadGuard<Capacities>) -> Option<bool> {
+    fn expand(
+        &mut self,
+        _: &Edge,
+        target: &Node,
+        _: &Arc<Graph>,
+        _: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool> {
         self.time_bin_count += target.time_bin.value() - self.last_time_bin.value();
         self.last_time_bin = target.time_bin;
         match self.time_bin_count {
@@ -103,7 +127,13 @@ impl Filter for ActivityCycleFilter {
             first_activity: node.purpose,
         }
     }
-    fn expand(&mut self, _: &Edge, target: &Node, _: &Arc<Graph>, _: &RwLockReadGuard<Capacities>) -> Option<bool> {
+    fn expand(
+        &mut self,
+        _: &Edge,
+        target: &Node,
+        _: &Arc<Graph>,
+        _: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool> {
         if self.first_activity == target.purpose {
             Some(true)
         } else {
@@ -124,7 +154,13 @@ impl Filter for DistinctActivitesFilter {
             activities: [false; Purpose::COUNT as usize],
         }
     }
-    fn expand(&mut self, edge: &Edge, _: &Node, _: &Arc<Graph>, _: &RwLockReadGuard<Capacities>) -> Option<bool> {
+    fn expand(
+        &mut self,
+        edge: &Edge,
+        _: &Node,
+        _: &Arc<Graph>,
+        _: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool> {
         // origin of trip includes first activity but is still compatible with activity cycle
         let index = edge.trip.category.origin as usize;
         let prev = self.activities[index];
@@ -149,8 +185,18 @@ impl Filter for CapacityFilter {
             mode_counts: [0; modes::COUNT],
         }
     }
-    fn expand(&mut self, edge: &Edge, node: &Node, _: &Arc<Graph>, capacities: &RwLockReadGuard<Capacities>) -> Option<bool> {
-        let trip_index = self.trip_counts.iter().position(|option| option.is_none() || option.unwrap().0 == edge.trip.index).unwrap();
+    fn expand(
+        &mut self,
+        edge: &Edge,
+        node: &Node,
+        _: &Arc<Graph>,
+        capacities: &RwLockReadGuard<Capacities>,
+    ) -> Option<bool> {
+        let trip_index = self
+            .trip_counts
+            .iter()
+            .position(|option| option.is_none() || option.unwrap().0 == edge.trip.index)
+            .unwrap();
         if self.trip_counts[trip_index].is_none() {
             self.trip_counts[trip_index] = Some((edge.trip.index, 1));
         } else {
@@ -160,10 +206,16 @@ impl Filter for CapacityFilter {
                 Some(prev)
             };
         }
-        let level_index = self.level_counts.iter().position(|option| option.is_none() || {
-            let level_count = option.unwrap();
-            level_count.0 == edge.trip.category.index && level_count.1 == node.time_bin
-        }).unwrap();
+        let level_index = self
+            .level_counts
+            .iter()
+            .position(|option| {
+                option.is_none() || {
+                    let level_count = option.unwrap();
+                    level_count.0 == edge.trip.category.index && level_count.1 == node.time_bin
+                }
+            })
+            .unwrap();
         if self.level_counts[level_index].is_none() {
             self.level_counts[level_index] = Some((edge.trip.category.index, node.time_bin, 1));
         } else {
@@ -175,11 +227,12 @@ impl Filter for CapacityFilter {
         }
         let mode_index = edge.mode.index;
         self.mode_counts[mode_index] += 1;
-        
+
         Some(
-            capacities.get_trip(edge.trip) >= self.trip_counts[trip_index].unwrap().1 &&
-            capacities.get_level(edge.trip.category, node.time_bin) >= self.level_counts[level_index].unwrap().2 &&
-            capacities.get_mode(edge.mode) >= self.mode_counts[mode_index]
+            capacities.get_trip(edge.trip) >= self.trip_counts[trip_index].unwrap().1
+                && capacities.get_level(edge.trip.category, node.time_bin)
+                    >= self.level_counts[level_index].unwrap().2
+                && capacities.get_mode(edge.mode) >= self.mode_counts[mode_index],
         )
     }
 }
