@@ -48,6 +48,7 @@ impl<'t> Graph {
                 }
             }
         }
+        graph.shrink_to_fit();
         Graph(graph)
     }
     pub fn node_indices(&self) -> Vec<NodeIndex> {
