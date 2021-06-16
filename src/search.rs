@@ -24,10 +24,10 @@ pub fn search() -> Vec<Vec<&'static Trip>> {
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
         println!(
-            "{}:{}:{} {}.{}%  {} plans",
-            secs % 60,
-            (secs / 60) % 60,
+            "{:02}:{:02}:{:02} {:02}.{}% {} plans",
             ((secs / 60) / 60) % 60,
+            (secs / 60) % 60,
+            secs % 60,
             chunk_count / 10,
             chunk_count % 10,
             result.len()
