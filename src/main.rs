@@ -7,10 +7,10 @@ mod io;
 mod levels;
 mod modes;
 mod purposes;
+mod search;
 mod time_bins;
 mod trips;
 
 fn main() {
-    capacities::Capacities::new();
-    graph::Graph::new();
+    search::search();
 }

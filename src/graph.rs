@@ -2,7 +2,7 @@ use super::{
     districts::District, modes::Mode, modes::MODES, purposes::Purpose, time_bins::TimeBin,
     time_bins::TIME_BINS, trips::Trip, trips::TRIPS,
 };
-use petgraph::graph::{Graph as Petgraph, NodeIndex};
+use petgraph::{graph::{Graph as Petgraph, NodeIndex, EdgeIndex}, Direction::Outgoing};
 use std::collections::HashMap;
 
 pub struct Graph(Petgraph<Node, Edge>);
@@ -56,5 +56,20 @@ impl<'t> Graph {
     }
     pub fn node(&self, node_index: NodeIndex) -> &Node {
         self.0.node_weight(node_index).unwrap()
+    }
+    pub fn edge(&self, edge_index: EdgeIndex) -> &Edge {
+        self.0.edge_weight(edge_index).unwrap()
+    }
+    pub fn first_edge(&self, node_index: NodeIndex) -> Option<EdgeIndex> {
+        self.0.first_edge(node_index, Outgoing)
+    }
+    pub fn next_edge(&self, edge_index: EdgeIndex) -> Option<EdgeIndex> {
+        self.0.next_edge(edge_index, Outgoing)
+    }
+    pub fn source_index(&self, edge_index: EdgeIndex) -> NodeIndex {
+        self.0.edge_endpoints(edge_index).unwrap().0
+    }
+    pub fn target_index(&self, edge_index: EdgeIndex) -> NodeIndex {
+        self.0.edge_endpoints(edge_index).unwrap().1
     }
 }

@@ -53,7 +53,7 @@ impl Capacities {
     pub fn set_level(&mut self, category: &Category, time_bin: TimeBin, count: Count) {
         self.of_levels[category.index][time_bin.value()] = count;
     }
-    pub fn set_mode(&mut self, mode: Mode, count: Count) {
+    pub fn set_mode(&mut self, mode: &Mode, count: Count) {
         self.of_modes[mode.index] = count;
     }
 }

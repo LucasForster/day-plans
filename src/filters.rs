@@ -1,11 +1,13 @@
 use super::{
     capacities::Capacities,
+    categories::CATEGORIES,
     graph::{Edge, Graph, Node},
-    modes,
+    modes::{self, MODES},
     purposes::Purpose,
     time_bins::{self, TimeBin},
+    trips::{Trip, TRIPS},
 };
-use std::sync::{Arc, RwLockReadGuard};
+use std::sync::{Arc, RwLockReadGuard, RwLockWriteGuard};
 
 pub trait Filter: Copy {
     type Param;
@@ -81,6 +83,11 @@ impl Filter for CombinedFilter {
         update_result!(self.distinct_activities);
         update_result!(self.capacity);
         result
+    }
+}
+impl CombinedFilter {
+    pub fn capacity_filter(&self) -> &CapacityFilter {
+        &self.capacity
     }
 }
 
@@ -170,7 +177,11 @@ impl Filter for DurationFilter {
         _: &Arc<Graph>,
         _: &RwLockReadGuard<Capacities>,
     ) -> Option<bool> {
-        self.time_bin_count += target.time_bin.value() - self.last_time_bin.value();
+        self.time_bin_count += if self.last_time_bin.value() < target.time_bin.value() {
+            target.time_bin.value() - self.last_time_bin.value()
+        } else {
+            target.time_bin.value() + time_bins::COUNT - self.last_time_bin.value()
+        };
         self.last_time_bin = target.time_bin;
         match self.time_bin_count {
             count if count > self.param.max_time_bin_count => Some(false),
@@ -299,5 +310,54 @@ impl Filter for CapacityFilter {
                     >= self.level_counts[level_index].unwrap().2
                 && capacities.get_mode(edge.mode) >= self.mode_counts[mode_index],
         )
+    }
+}
+impl CapacityFilter {
+    pub fn try_extracting(&self, capacities: &mut RwLockWriteGuard<Capacities>) -> Result<(), ()> {
+        macro_rules! unwrap_or_continue {
+            ($o: expr) => {
+                match $o {
+                    Some(v) => v,
+                    None => continue,
+                }
+            };
+        }
+        // check
+        for trip_count in self.trip_counts.iter() {
+            let (index, count) = unwrap_or_continue!(trip_count);
+            if capacities.get_trip(&TRIPS[*index]) < *count {
+                return Err(());
+            }
+        }
+        for level_count in self.level_counts.iter() {
+            let (category_index, time_bin, count) = unwrap_or_continue!(level_count);
+            if capacities.get_level(&CATEGORIES[*category_index], *time_bin) < *count {
+                return Err(());
+            }
+        }
+        for (index, count) in self.mode_counts.iter().enumerate() {
+            if capacities.get_mode(&MODES[index]) < *count {
+                return Err(());
+            }
+        }
+        // extract
+        for trip_count in self.trip_counts.iter() {
+            let (index, count) = unwrap_or_continue!(trip_count);
+            let trip = &TRIPS[*index];
+            let capacity = capacities.get_trip(trip);
+            capacities.set_trip(trip, capacity - count);
+        }
+        for level_count in self.level_counts.iter() {
+            let (category_index, time_bin, count) = unwrap_or_continue!(level_count);
+            let category = &CATEGORIES[*category_index];
+            let capacity = capacities.get_level(category, *time_bin);
+            capacities.set_level(category, *time_bin, capacity - count);
+        }
+        for (index, count) in self.mode_counts.iter().enumerate() {
+            let mode = &MODES[index];
+            let capacity = capacities.get_mode(mode);
+            capacities.set_mode(mode, capacity - count);
+        }
+        Ok(())
     }
 }
