@@ -6,23 +6,46 @@ use super::{
 };
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use rayon::prelude::*;
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::{
+    sync::{Arc, RwLock, RwLockReadGuard},
+    time::SystemTime,
+};
 
 pub fn search() -> Vec<Vec<&'static Trip>> {
+    let start = SystemTime::now();
+
     let graph = Arc::new(Graph::new());
     let capacities = Arc::new(RwLock::new(Capacities::new()));
-    let node_indices = graph.node_indices();
 
-    node_indices
-        .par_iter()
-        .map(|&node_index| execute(graph.clone(), capacities.clone(), node_index))
-        .reduce(
-            || Vec::new(),
-            |mut acc, mut result| {
-                acc.append(&mut result);
-                acc
-            },
-        )
+    let node_indices = graph.node_indices();
+    let chunk_size = (node_indices.len() as f64 / 1000f64).ceil() as usize;
+
+    let mut result: Vec<Vec<&'static Trip>> = Vec::new();
+    for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
+        let secs = start.elapsed().unwrap().as_secs();
+        println!(
+            "{}:{}:{} {}.{}%  {} plans",
+            secs % 60,
+            (secs / 60) % 60,
+            ((secs / 60) / 60) % 60,
+            chunk_count / 10,
+            chunk_count % 10,
+            result.len()
+        );
+        result.append(
+            &mut chunk
+                .par_iter()
+                .map(|&node_index| execute(graph.clone(), capacities.clone(), node_index))
+                .reduce(
+                    || Vec::new(),
+                    |mut acc, mut result| {
+                        acc.append(&mut result);
+                        acc
+                    },
+                ),
+        );
+    }
+    result
 }
 
 struct State {
