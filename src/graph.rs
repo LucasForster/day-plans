@@ -51,6 +51,7 @@ impl<'t> Graph {
             }
         }
         graph.shrink_to_fit();
+        println!("\rBuilt graph: {} nodes, {:.2e} edges", graph.node_count(), graph.edge_count());
         Graph(graph)
     }
     pub fn node_indices(&self) -> Vec<NodeIndex> {

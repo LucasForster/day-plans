@@ -18,19 +18,18 @@ pub fn search() -> Vec<Vec<&'static Trip>> {
     let capacities = Arc::new(RwLock::new(Capacities::new()));
 
     let node_indices = graph.node_indices();
-    let chunk_size = (node_indices.len() as f64 / 1000f64).ceil() as usize;
+    let chunk_size = (node_indices.len() as f64 / 100f64).ceil() as usize;
 
     let mut result: Vec<Vec<&'static Trip>> = Vec::new();
     let mut total_steps: u64 = 0;
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
         println!(
-            "{:02}:{:02}:{:02} {:02}.{}% {} plans, {:.2e} steps",
+            "{}:{:02}:{:02} {:2}% {:4} plans, {:<7.2e} steps",
             ((secs / 60) / 60) % 60,
             (secs / 60) % 60,
             secs % 60,
-            chunk_count / 10,
-            chunk_count % 10,
+            chunk_count,
             result.len(),
             total_steps,
         );
