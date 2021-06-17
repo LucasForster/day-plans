@@ -21,30 +21,33 @@ pub fn search() -> Vec<Vec<&'static Trip>> {
     let chunk_size = (node_indices.len() as f64 / 1000f64).ceil() as usize;
 
     let mut result: Vec<Vec<&'static Trip>> = Vec::new();
+    let mut total_steps: u64 = 0;
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
         println!(
-            "{:02}:{:02}:{:02} {:02}.{}% {} plans",
+            "{:02}:{:02}:{:02} {:02}.{}% {} plans, {:.2e} steps",
             ((secs / 60) / 60) % 60,
             (secs / 60) % 60,
             secs % 60,
             chunk_count / 10,
             chunk_count % 10,
-            result.len()
+            result.len(),
+            total_steps,
         );
-        result.append(
-            &mut chunk
-                .par_iter()
-                .map(|&node_index| execute(graph.clone(), capacities.clone(), node_index))
-                .reduce(
-                    || Vec::new(),
-                    |mut acc, mut result| {
-                        acc.append(&mut result);
-                        acc
-                    },
-                ),
-        );
+        let mut chunk_result = chunk
+            .par_iter()
+            .map(|&node_index| execute(graph.clone(), capacities.clone(), node_index))
+            .reduce(
+                || (Vec::new(), 0u64),
+                |(mut acc, total_steps), (mut result, search_steps)| {
+                    acc.append(&mut result);
+                    (acc, total_steps + search_steps)
+                },
+            );
+        result.append(&mut chunk_result.0);
+        total_steps += chunk_result.1;
     }
+    println!("Found {} plans.", result.len());
     result
 }
 
@@ -57,13 +60,15 @@ fn execute(
     graph: Arc<Graph>,
     capacities_arc: Arc<RwLock<Capacities>>,
     node_index: NodeIndex,
-) -> Vec<Vec<&'static Trip>> {
+) -> (Vec<Vec<&'static Trip>>, u64) {
     let mut capacities_read: RwLockReadGuard<Capacities> = capacities_arc.read().unwrap();
     let mut plans: Vec<Vec<&Trip>> = Vec::new();
     let root_filter = CombinedFilter::new(graph.node(node_index), ());
     let mut states: Vec<State> = Vec::new();
+    let mut search_steps: u64 = 0;
 
     loop {
+        search_steps += 1;
         let to_child: Result<Option<bool>, ()> = {
             if states.is_empty() && graph.first_edge(node_index).is_none() {
                 Err(())
@@ -108,12 +113,13 @@ fn execute(
             }
             Err(()) => {
                 if states.is_empty() {
-                    return plans;
+                    return (plans, search_steps);
                 }
             }
             Ok(Some(false)) => {}
         }
         loop {
+            search_steps += 1;
             let to_sibling: Result<Option<bool>, ()> = {
                 let option = graph.next_edge(states.last().unwrap().edge_index);
                 if option.is_none() {
@@ -140,7 +146,7 @@ fn execute(
                 Err(()) => {
                     states.pop();
                     if states.is_empty() {
-                        return plans;
+                        return (plans, search_steps);
                     } else {
                         continue;
                     }
