@@ -2,7 +2,7 @@ use super::io;
 use lazy_static::lazy_static;
 use std::hash::{Hash, Hasher};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Id(u16);
 
 #[derive(Debug)]

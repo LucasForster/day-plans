@@ -1,5 +1,5 @@
 use super::{
-    districts::District, modes::Mode, modes::MODES, purposes::Purpose, time_bins::TimeBin,
+    districts, modes::Mode, modes::MODES, purposes::Purpose, time_bins::TimeBin,
     time_bins::TIME_BINS, trips::Trip, trips::TRIPS,
 };
 use petgraph::{graph::{Graph as Petgraph, NodeIndex, EdgeIndex}, Direction::Outgoing};
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub struct Graph(Petgraph<Node, Edge>);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Node {
-    pub district: &'static District,
+    pub district_id: districts::Id,
     pub purpose: Purpose,
     pub time_bin: TimeBin,
 }
@@ -26,22 +26,24 @@ impl<'t> Graph {
                 for mode in MODES.iter() {
                     let trip_category = trip.category;
                     let source_key = Node {
-                        district: trip.origin,
+                        district_id: trip.origin.id,
                         purpose: trip_category.origin,
                         time_bin,
                     };
-                    let source_index: NodeIndex = *nodes
-                        .entry(source_key)
-                        .or_insert(graph.add_node(source_key));
+                    if !nodes.contains_key(&source_key) {
+                        nodes.insert(source_key, graph.add_node(source_key));
+                    }
+                    let source_index: NodeIndex = *nodes.get(&source_key).unwrap();
 
                     let destination_key = Node {
-                        district: trip.destination,
+                        district_id: trip.destination.id,
                         purpose: trip_category.destination,
                         time_bin: time_bin + trip_category.origin.duration(), // TODO: leg duration
                     };
-                    let destination_index: NodeIndex = *nodes
-                        .entry(destination_key)
-                        .or_insert(graph.add_node(destination_key));
+                    if !nodes.contains_key(&destination_key) {
+                        nodes.insert(destination_key, graph.add_node(destination_key));
+                    }
+                    let destination_index: NodeIndex = *nodes.get(&destination_key).unwrap();
 
                     let edge_key = Edge { trip, mode };
                     graph.add_edge(source_index, destination_index, edge_key);
