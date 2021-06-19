@@ -71,12 +71,14 @@ fn execute(
         let to_child: Result<Option<bool>, ()> = {
             if states.is_empty() && graph.first_edge(node_index).is_none() {
                 Err(())
+            } else if !states.is_empty() && graph.first_edge(graph.target_index(states.last().unwrap().edge_index)).is_none() {
+                Err(())
             } else {
                 let (parent_filter, edge_index) = if states.is_empty() {
                     (root_filter, graph.first_edge(node_index).unwrap())
                 } else {
                     let state = states.last().unwrap();
-                    (state.filter, state.edge_index)
+                    (state.filter, graph.first_edge(graph.target_index(states.last().unwrap().edge_index)).unwrap())
                 };
                 let mut filter = parent_filter.clone();
                 let result = filter.expand(
