@@ -66,6 +66,27 @@ fn execute(
     let mut states: Vec<State> = Vec::new();
     let mut search_steps: u64 = 0;
 
+    macro_rules! try_extracting {
+        () => {
+            drop(capacities_read);
+            let mut capacities_write = capacities_arc.write().unwrap();
+            let capacity_filter = states.last().unwrap().filter.capacity_filter();
+            while capacity_filter
+                .try_extracting(&mut capacities_write)
+                .is_ok()
+            {
+                plans.push(
+                    states
+                        .iter()
+                        .map(|state| graph.edge(state.edge_index).trip)
+                        .collect(),
+                );
+            }
+            drop(capacities_write);
+            capacities_read = capacities_arc.read().unwrap();
+        }
+    }
+
     loop {
         search_steps += 1;
         let to_child: Result<Option<bool>, ()> = {
@@ -94,22 +115,7 @@ fn execute(
         match to_child {
             Ok(None) => continue,
             Ok(Some(true)) => {
-                drop(capacities_read);
-                let mut capacities_write = capacities_arc.write().unwrap();
-                let capacity_filter = states.last().unwrap().filter.capacity_filter();
-                while capacity_filter
-                    .try_extracting(&mut capacities_write)
-                    .is_ok()
-                {
-                    plans.push(
-                        states
-                            .iter()
-                            .map(|state| graph.edge(state.edge_index).trip)
-                            .collect(),
-                    );
-                }
-                drop(capacities_write);
-                capacities_read = capacities_arc.read().unwrap();
+                try_extracting!();
                 continue; // continue probably unnecessary
             }
             Err(()) => {
@@ -153,22 +159,7 @@ fn execute(
                     }
                 }
                 Ok(Some(true)) => {
-                    drop(capacities_read);
-                    let mut capacities_write = capacities_arc.write().unwrap();
-                    let capacity_filter = states.last().unwrap().filter.capacity_filter();
-                    while capacity_filter
-                        .try_extracting(&mut capacities_write)
-                        .is_ok()
-                    {
-                        plans.push(
-                            states
-                                .iter()
-                                .map(|state| graph.edge(state.edge_index).trip)
-                                .collect(),
-                        );
-                    }
-                    drop(capacities_write);
-                    capacities_read = capacities_arc.read().unwrap();
+                    try_extracting!();
                     break;
                 }
                 Ok(None) => break,
