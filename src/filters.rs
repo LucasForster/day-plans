@@ -20,6 +20,7 @@ pub trait Filter: Copy {
         graph: &Arc<Graph>,
         capacities: &RwLockReadGuard<Capacities>,
     ) -> Option<bool>;
+    fn name(&self) -> &'static str;
 }
 
 #[derive(Clone, Copy)]
@@ -120,6 +121,7 @@ impl Filter for LengthFilter {
             _ => Some(true),
         }
     }
+    fn name(&self) -> &'static str { "length" }
 }
 
 // FIRST ACTIVITY
@@ -146,6 +148,7 @@ impl Filter for FirstActivityFilter {
     ) -> Option<bool> {
         Some(self.valid)
     }
+    fn name(&self) -> &'static str { "first activity" }
 }
 
 // DURATION
@@ -188,6 +191,7 @@ impl Filter for DurationFilter {
             _ => Some(true),
         }
     }
+    fn name(&self) -> &'static str { "duration" }
 }
 
 // ACTIVITY CYCLE
@@ -215,6 +219,7 @@ impl Filter for ActivityCycleFilter {
             None
         }
     }
+    fn name(&self) -> &'static str { "activity cycle" }
 }
 
 // DISTINCT ACTIVITIES
@@ -242,6 +247,7 @@ impl Filter for DistinctActivitesFilter {
         self.activities[index] = true;
         Some(!prev)
     }
+    fn name(&self) -> &'static str { "distinct activities" }
 }
 
 // CAPACITY
@@ -310,6 +316,7 @@ impl Filter for CapacityFilter {
                 && capacities.get_mode(edge.mode) >= self.mode_counts[mode_index],
         )
     }
+    fn name(&self) -> &'static str { "capacity" }
 }
 impl CapacityFilter {
     pub fn try_extracting(&self, capacities: &mut RwLockWriteGuard<Capacities>) -> Result<(), ()> {
