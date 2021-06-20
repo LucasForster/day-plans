@@ -62,7 +62,7 @@ fn execute(
 ) -> (Vec<Vec<&'static Trip>>, u64) {
     let mut capacities_read: RwLockReadGuard<Capacities> = capacities_arc.read().unwrap();
     let mut plans: Vec<Vec<&Trip>> = Vec::new();
-    let root_filter = CombinedFilter::new(graph.node(node_index), ());
+    let root_filter = CombinedFilter::new(graph.node(node_index));
     let mut states: Vec<State> = Vec::new();
     let mut search_steps: u64 = 0;
 
@@ -89,29 +89,23 @@ fn execute(
 
     loop {
         search_steps += 1;
-        let to_child: Result<Option<bool>, ()> = {
-            if states.is_empty() && graph.first_edge(node_index).is_none() {
-                Err(())
-            } else if !states.is_empty() && graph.first_edge(graph.target_index(states.last().unwrap().edge_index)).is_none() {
-                Err(())
+        let to_child: Result<Option<bool>, ()> = (|| {
+            let (mut filter, edge_index) = if states.is_empty() {
+                match graph.first_edge(node_index) {
+                    Some(edge_index) => (root_filter.clone(), edge_index),
+                    None => return Err(()),
+                }
             } else {
-                let (parent_filter, edge_index) = if states.is_empty() {
-                    (root_filter, graph.first_edge(node_index).unwrap())
-                } else {
-                    let state = states.last().unwrap();
-                    (state.filter, graph.first_edge(graph.target_index(states.last().unwrap().edge_index)).unwrap())
-                };
-                let mut filter = parent_filter.clone();
-                let result = filter.expand(
-                    graph.edge(edge_index),
-                    graph.node(graph.target_index(edge_index)),
-                    &graph,
-                    &capacities_read,
-                );
-                states.push(State { edge_index, filter });
-                Ok(result)
-            }
-        };
+                let state = states.last().unwrap();
+                match graph.first_edge(graph.target_index(state.edge_index)) {
+                    Some(edge_index) => (state.filter.clone(), edge_index),
+                    None => return Err(()),
+                }
+            };
+            let result = filter.expand(edge_index, &graph, &capacities_read);
+            states.push(State { edge_index, filter });
+            Ok(result)
+        })();
         match to_child {
             Ok(None) => continue,
             Ok(Some(true)) => {
@@ -127,28 +121,21 @@ fn execute(
         }
         loop {
             search_steps += 1;
-            let to_sibling: Result<Option<bool>, ()> = {
-                let option = graph.next_edge(states.last().unwrap().edge_index);
-                if option.is_none() {
-                    Err(())
+            let to_sibling: Result<Option<bool>, ()> = (|| {
+                debug_assert!(!states.is_empty());
+                let edge_index = match graph.next_edge(states.last().unwrap().edge_index) {
+                    Some(edge_index) => edge_index,
+                    None => return Err(()),
+                };
+                let mut filter = if states.len() == 1 {
+                    root_filter.clone()
                 } else {
-                    let edge_index = option.unwrap();
-                    let parent_filter = if states.len() == 1 {
-                        root_filter
-                    } else {
-                        states.get(states.len() - 2).unwrap().filter
-                    };
-                    let mut filter = parent_filter.clone();
-                    let result = filter.expand(
-                        graph.edge(edge_index),
-                        graph.node(graph.target_index(edge_index)),
-                        &graph,
-                        &capacities_read,
-                    );
-                    *states.last_mut().unwrap() = State { edge_index, filter };
-                    Ok(result)
-                }
-            };
+                    states.get(states.len() - 2).unwrap().filter.clone()
+                };
+                let result = filter.expand(edge_index, &graph, &capacities_read);
+                *states.last_mut().unwrap() = State { edge_index, filter };
+                Ok(result)
+            })();
             match to_sibling {
                 Err(()) => {
                     states.pop();

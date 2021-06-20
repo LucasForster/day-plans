@@ -7,6 +7,7 @@ use super::{
     time_bins::{self, TimeBin},
     trips::{Trip, TRIPS},
 };
+use petgraph::graph::EdgeIndex;
 use std::sync::{Arc, RwLockReadGuard, RwLockWriteGuard};
 
 pub trait Filter: Copy {
@@ -30,9 +31,8 @@ pub struct CombinedFilter {
     distinct_activities: DistinctActivitesFilter,
     capacity: CapacityFilter,
 }
-impl Filter for CombinedFilter {
-    type Param = ();
-    fn new(source: &Node, _: Self::Param) -> Self {
+impl CombinedFilter {
+    pub fn new(source: &Node) -> Self {
         CombinedFilter {
             length: LengthFilter::new(
                 source,
@@ -59,13 +59,14 @@ impl Filter for CombinedFilter {
             capacity: CapacityFilter::new(source, ()),
         }
     }
-    fn expand(
+    pub fn expand(
         &mut self,
-        edge: &Edge,
-        target: &Node,
+        edge_index: EdgeIndex,
         graph: &Arc<Graph>,
         capacities: &RwLockReadGuard<Capacities>,
     ) -> Option<bool> {
+        let edge = graph.edge(edge_index);
+        let target = graph.node(graph.target_index(edge_index));
         let mut result = Some(true);
         macro_rules! update_result {
             ($filter:expr) => {
@@ -84,8 +85,6 @@ impl Filter for CombinedFilter {
         update_result!(self.capacity);
         result
     }
-}
-impl CombinedFilter {
     pub fn capacity_filter(&self) -> &CapacityFilter {
         &self.capacity
     }
