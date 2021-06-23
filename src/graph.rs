@@ -19,7 +19,7 @@ pub struct Edge {
     pub mode: &'static Mode,
 }
 
-impl<'t> Graph {
+impl Graph {
     pub fn new() -> Self {
         let mut graph = Petgraph::<Node, Edge>::new();
         let mut nodes = HashMap::<Node, NodeIndex>::new();
