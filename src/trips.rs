@@ -1,4 +1,6 @@
-use super::{categories::Category, categories::CATEGORIES, districts, districts::District, io};
+use super::categories::{Category, CATEGORIES};
+use super::districts::{self, District};
+use super::io;
 use lazy_static::lazy_static;
 
 #[derive(Clone, Copy)]

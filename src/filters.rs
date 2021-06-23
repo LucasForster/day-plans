@@ -1,12 +1,10 @@
-use super::{
-    capacities::Capacities,
-    categories::CATEGORIES,
-    graph::{Edge, Graph, Node},
-    modes::{self, MODES},
-    purposes::Purpose,
-    time_bins::{self, TimeBin},
-    trips::{Trip, TRIPS},
-};
+use super::capacities::Capacities;
+use super::categories::CATEGORIES;
+use super::graph::{Edge, Graph, Node};
+use super::modes::{self, MODES};
+use super::purposes::Purpose;
+use super::time_bins::{self, TimeBin};
+use super::trips::TRIPS;
 use petgraph::graph::EdgeIndex;
 use std::sync::{Arc, RwLockReadGuard, RwLockWriteGuard};
 

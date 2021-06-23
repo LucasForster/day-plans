@@ -1,4 +1,6 @@
-use super::{categories::Category, categories::CATEGORIES, io, time_bins};
+use super::categories::{Category, CATEGORIES};
+use super::io;
+use super::time_bins;
 use lazy_static::lazy_static;
 
 type Levels = [f64; time_bins::COUNT];

@@ -1,15 +1,11 @@
-use super::{
-    capacities::Capacities,
-    filters::{CombinedFilter, Filter},
-    graph::Graph,
-    trips::Trip,
-};
+use super::capacities::Capacities;
+use super::filters::CombinedFilter;
+use super::graph::Graph;
+use super::trips::Trip;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use rayon::prelude::*;
-use std::{
-    sync::{Arc, RwLock, RwLockReadGuard},
-    time::SystemTime,
-};
+use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::time::SystemTime;
 
 pub fn search() -> Vec<Vec<&'static Trip>> {
     let start = SystemTime::now();

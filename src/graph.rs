@@ -1,8 +1,10 @@
-use super::{
-    districts, modes::Mode, modes::MODES, purposes::Purpose, time_bins::TimeBin,
-    time_bins::TIME_BINS, trips::Trip, trips::TRIPS,
-};
-use petgraph::{graph::{Graph as Petgraph, NodeIndex, EdgeIndex}, Direction::Outgoing};
+use super::districts;
+use super::modes::{Mode, MODES};
+use super::purposes::Purpose;
+use super::time_bins::{TimeBin, TIME_BINS};
+use super::trips::{Trip, TRIPS};
+use petgraph::graph::{EdgeIndex, Graph as Petgraph, NodeIndex};
+use petgraph::Direction::Outgoing;
 use std::collections::HashMap;
 
 pub struct Graph(Petgraph<Node, Edge>);

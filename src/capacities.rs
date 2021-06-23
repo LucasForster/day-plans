@@ -1,7 +1,8 @@
-use super::{
-    categories::Category, categories::CATEGORIES, levels, modes::Mode, modes::MODES, time_bins,
-    time_bins::TimeBin, trips::Trip, trips::TRIPS,
-};
+use super::categories::{Category, CATEGORIES};
+use super::levels;
+use super::modes::{Mode, MODES};
+use super::time_bins::{self, TimeBin};
+use super::trips::{Trip, TRIPS};
 use std::convert::TryInto;
 
 type Count = usize;

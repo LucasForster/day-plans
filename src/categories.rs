@@ -1,4 +1,5 @@
-use super::{io, purposes::Purpose};
+use super::io;
+use super::purposes::Purpose;
 use lazy_static::lazy_static;
 use std::fmt::{Display, Formatter, Result};
 use std::str::FromStr;

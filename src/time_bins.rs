@@ -1,9 +1,7 @@
 use lazy_static::lazy_static;
-use std::{
-    convert::TryInto,
-    ops::{Add, Sub},
-    time::Duration,
-};
+use std::convert::TryInto;
+use std::ops::{Add, Sub};
+use std::time::Duration;
 
 pub const COUNT: usize = 48; // instead of u8 for external use
 const TIME_BIN_SECS: usize = 30 * 60;
