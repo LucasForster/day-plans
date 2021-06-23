@@ -1,10 +1,18 @@
 use super::{io, purposes::Purpose};
 use lazy_static::lazy_static;
+use std::fmt::{Display, Formatter, Result};
 use std::str::FromStr;
 
+#[derive(PartialEq, Eq)]
+pub struct Id(u8);
+impl Display for Id {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", self.0)
+    }
+}
 pub struct Category {
     pub index: usize,
-    pub id: u8,
+    pub id: Id,
     pub origin: Purpose,
     pub destination: Purpose,
     _priv: (),
@@ -34,7 +42,7 @@ fn load() -> Vec<Category> {
         let id: u8 = record[0].parse().unwrap();
         if categories
             .iter()
-            .find(|&category| category.id == id)
+            .find(|&category| category.id.0 == id)
             .is_some()
         {
             panic!("Duplicate category id!");
@@ -43,7 +51,7 @@ fn load() -> Vec<Category> {
         let destination = Purpose::from_str(split[1]).unwrap();
         categories.push(Category {
             index: categories.len(),
-            id,
+            id: Id(id),
             origin,
             destination,
             _priv: (),
