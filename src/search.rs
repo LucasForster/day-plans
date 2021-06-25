@@ -1,37 +1,36 @@
-use super::capacities::Capacities;
-use super::filters::CombinedFilter;
-use super::graph::Graph;
-use super::trips::Trip;
+use super::filters::{self, Filter};
+use super::graph::{Edge, Graph, Node};
+use super::purposes::Purpose;
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use rayon::prelude::*;
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::sync::Arc;
 use std::time::SystemTime;
 
-pub fn search() -> Vec<Vec<&'static Trip>> {
+pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
 
     let graph = Arc::new(Graph::new());
-    let capacities = Arc::new(RwLock::new(Capacities::new()));
 
     let node_indices = graph.node_indices();
-    let chunk_size = (node_indices.len() as f64 / 100f64).ceil() as usize;
+    let chunk_size = (node_indices.len() as f64 / 10000f64).ceil() as usize;
 
-    let mut result: Vec<Vec<&'static Trip>> = Vec::new();
+    let mut result: Vec<Vec<(Node, Edge)>> = Vec::new();
     let mut total_steps: u64 = 0;
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
         println!(
-            "{}:{:02}:{:02} {:2}% {:4} plans, {:<7.2e} steps",
+            "{:2}:{:02}:{:02} {:2}.{:02}% {:4} plans, {:<7.2e} steps",
             ((secs / 60) / 60) % 60,
             (secs / 60) % 60,
             secs % 60,
-            chunk_count,
+            chunk_count / 100,
+            chunk_count % 100,
             result.len(),
             total_steps,
         );
         let mut chunk_result = chunk
             .par_iter()
-            .map(|&node_index| execute(graph.clone(), capacities.clone(), node_index))
+            .map(|&node_index| execute(graph.clone(), node_index))
             .reduce(
                 || (Vec::new(), 0u64),
                 |(mut acc, total_steps), (mut result, search_steps)| {
@@ -46,107 +45,131 @@ pub fn search() -> Vec<Vec<&'static Trip>> {
     result
 }
 
-struct State {
-    edge_index: EdgeIndex,
-    filter: CombinedFilter,
-}
+fn execute(graph: Arc<Graph>, node_index: NodeIndex) -> (Vec<Vec<(Node, Edge)>>, u64) {
+    let filter_params = filters::Params {
+        length_range: (2..6),
+        first_activity: vec![Purpose::Home],
+        duration_min: 40,
+    };
 
-fn execute(
-    graph: Arc<Graph>,
-    capacities_arc: Arc<RwLock<Capacities>>,
-    node_index: NodeIndex,
-) -> (Vec<Vec<&'static Trip>>, u64) {
-    let mut capacities_read: RwLockReadGuard<Capacities> = capacities_arc.read().unwrap();
-    let mut plans: Vec<Vec<&Trip>> = Vec::new();
-    let root_filter = CombinedFilter::new(graph.node(node_index));
-    let mut states: Vec<State> = Vec::new();
+    let mut plans: Vec<Vec<(Node, Edge)>> = Vec::new();
     let mut search_steps: u64 = 0;
+    let mut filter = match Filter::new(filter_params, *graph.node(node_index)) {
+        Some(filter) => filter,
+        None => return (plans, search_steps),
+    };
+    let mut node_indices = vec![node_index];
+    let mut edge_indices: Vec<EdgeIndex> = Vec::new();
 
-    macro_rules! try_extracting {
-        () => {
-            drop(capacities_read);
-            let mut capacities_write = capacities_arc.write().unwrap();
-            let capacity_filter = states.last().unwrap().filter.capacity_filter();
-            while capacity_filter
-                .try_extracting(&mut capacities_write)
-                .is_ok()
-            {
-                plans.push(
-                    states
-                        .iter()
-                        .map(|state| graph.edge(state.edge_index).trip)
-                        .collect(),
-                );
+    macro_rules! unwrap_or_return {
+        ($option:expr, $value:expr) => {
+            match $option {
+                Some(v) => v,
+                None => return $value,
             }
-            drop(capacities_write);
-            capacities_read = capacities_arc.read().unwrap();
+        };
+    }
+
+    fn try_extracting(filter: &Filter, plans: &mut Vec<Vec<(Node, Edge)>>) {
+        plans.push(filter.try_extracting());
+    }
+
+    fn to_child<'c>(
+        search_steps: &mut u64,
+        edge_indices: &mut Vec<EdgeIndex>,
+        node_indices: &mut Vec<NodeIndex>,
+        filter: &mut Filter,
+        graph: &Graph,
+        plans: &mut Vec<Vec<(Node, Edge)>>,
+    ) -> bool {
+        *search_steps += 1;
+        let edge_index = unwrap_or_return!(graph.first_edge(*node_indices.last().unwrap()), false);
+        let target_index = graph.target_index(edge_index);
+        match filter.to_child(graph.node(target_index), graph.edge(edge_index)) {
+            Err(()) => return false,
+            Ok(false) => {}
+            Ok(true) => try_extracting(filter, plans),
         }
+        edge_indices.push(edge_index);
+        node_indices.push(target_index);
+        true
+    }
+
+    fn to_sibling<'c>(
+        search_steps: &mut u64,
+        edge_indices: &mut Vec<EdgeIndex>,
+        node_indices: &mut Vec<NodeIndex>,
+        filter: &mut Filter,
+        graph: &Graph,
+        plans: &mut Vec<Vec<(Node, Edge)>>,
+    ) -> bool {
+        *search_steps += 1;
+        let prev_edge_index = unwrap_or_return!(edge_indices.pop(), false);
+        let prev_target_index = node_indices.pop().unwrap();
+        let sibling_edge_index = match graph.next_edge(prev_edge_index) {
+            Some(sibling) => sibling,
+            None => {
+                edge_indices.push(prev_edge_index);
+                node_indices.push(prev_target_index);
+                return false;
+            }
+        };
+        filter.to_parent();
+        let sibling_target_index = graph.target_index(sibling_edge_index);
+        match filter.to_child(
+            graph.node(sibling_target_index),
+            graph.edge(sibling_edge_index)
+        ) {
+            Err(()) => {
+                edge_indices.push(prev_edge_index);
+                node_indices.push(prev_target_index);
+                return false;
+            }
+            Ok(false) => {}
+            Ok(true) => try_extracting(filter, plans),
+        }
+        edge_indices.push(sibling_edge_index);
+        node_indices.push(sibling_target_index);
+        true
+    }
+
+    fn to_parent(
+        edge_indices: &mut Vec<EdgeIndex>,
+        node_indices: &mut Vec<NodeIndex>,
+        filter: &mut Filter,
+    ) -> bool {
+        unwrap_or_return!(edge_indices.pop(), false);
+        node_indices.pop();
+        filter.to_parent();
+        true
     }
 
     loop {
-        search_steps += 1;
-        let to_child: Result<Option<bool>, ()> = (|| {
-            let (mut filter, edge_index) = if states.is_empty() {
-                match graph.first_edge(node_index) {
-                    Some(edge_index) => (root_filter.clone(), edge_index),
-                    None => return Err(()),
-                }
-            } else {
-                let state = states.last().unwrap();
-                match graph.first_edge(graph.target_index(state.edge_index)) {
-                    Some(edge_index) => (state.filter.clone(), edge_index),
-                    None => return Err(()),
-                }
-            };
-            let result = filter.expand(edge_index, &graph, &capacities_read);
-            states.push(State { edge_index, filter });
-            Ok(result)
-        })();
-        match to_child {
-            Ok(None) => continue,
-            Ok(Some(true)) => {
-                try_extracting!();
-                continue; // continue probably unnecessary
-            }
-            Err(()) => {
-                if states.is_empty() {
-                    return (plans, search_steps);
-                }
-            }
-            Ok(Some(false)) => {}
+        let to_child = to_child(
+            &mut search_steps,
+            &mut edge_indices,
+            &mut node_indices,
+            &mut filter,
+            &graph,
+            &mut plans,
+        );
+        if to_child {
+            continue;
         }
         loop {
-            search_steps += 1;
-            let to_sibling: Result<Option<bool>, ()> = (|| {
-                debug_assert!(!states.is_empty());
-                let edge_index = match graph.next_edge(states.last().unwrap().edge_index) {
-                    Some(edge_index) => edge_index,
-                    None => return Err(()),
-                };
-                let mut filter = if states.len() == 1 {
-                    root_filter.clone()
-                } else {
-                    states.get(states.len() - 2).unwrap().filter.clone()
-                };
-                let result = filter.expand(edge_index, &graph, &capacities_read);
-                *states.last_mut().unwrap() = State { edge_index, filter };
-                Ok(result)
-            })();
-            match to_sibling {
-                Err(()) => {
-                    states.pop();
-                    if states.is_empty() {
-                        return (plans, search_steps);
-                    } else {
-                        continue;
-                    }
+            let to_sibling = to_sibling(
+                &mut search_steps,
+                &mut edge_indices,
+                &mut node_indices,
+                &mut filter,
+                &graph,
+                &mut plans,
+            );
+            if !to_sibling {
+                let to_parent = to_parent(&mut edge_indices, &mut node_indices, &mut filter);
+                if !to_parent {
+                    return (plans, search_steps);
                 }
-                Ok(Some(true)) => {
-                    try_extracting!();
-                    break;
-                }
-                Ok(None) => break,
-                Ok(Some(false)) => continue,
             }
         }
     }

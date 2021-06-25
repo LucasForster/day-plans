@@ -15,6 +15,7 @@ pub struct Node {
     pub purpose: Purpose,
     pub time_bin: TimeBin,
 }
+#[derive(Clone, Copy)]
 pub struct Edge {
     pub trip: &'static Trip,
     pub mode: &'static Mode,

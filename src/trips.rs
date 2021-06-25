@@ -2,6 +2,7 @@ use super::categories::{Category, CATEGORIES};
 use super::districts::{self, District};
 use super::io;
 use lazy_static::lazy_static;
+use std::hash::{Hash, Hasher};
 
 #[derive(Clone, Copy)]
 pub enum Transport {
@@ -26,6 +27,17 @@ pub struct Trip {
     pub count: usize,
     _priv: (),
 }
+impl PartialEq for Trip {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index
+    }
+}
+impl Eq for Trip {}
+impl Hash for Trip {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.index.hash(state);
+    }
+}
 
 lazy_static! {
     pub static ref TRIPS: Vec<Trip> = load();
@@ -41,7 +53,7 @@ fn load() -> Vec<Trip> {
             );
             let records = io::read_csv(path, true, false, b' ', Some(b'C'));
             for record in records {
-                let count = record[2].parse::<f64>().unwrap().round() as usize;
+                let count = (record[2].parse::<f64>().unwrap() * 0.05f64).round() as usize;
                 if count == 0 {
                     continue;
                 }

@@ -4,8 +4,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-use csv::{ReaderBuilder, StringRecord};
-
 pub fn read_csv<S: AsRef<OsStr>>(
     path: S,
     is_ascii: bool,

@@ -1,367 +1,111 @@
-use super::capacities::Capacities;
-use super::categories::CATEGORIES;
-use super::graph::{Edge, Graph, Node};
-use super::modes::{self, MODES};
+use super::graph::{Edge, Node};
 use super::purposes::Purpose;
-use super::time_bins::{self, TimeBin};
-use super::trips::TRIPS;
-use petgraph::graph::EdgeIndex;
-use std::sync::{Arc, RwLockReadGuard, RwLockWriteGuard};
+use super::time_bins;
+use std::ops::{Deref, Range};
 
-pub trait Filter: Copy {
-    type Param;
-    fn new(source: &Node, param: Self::Param) -> Self;
-    fn expand(
-        &mut self,
-        edge: &Edge,
-        target: &Node,
-        graph: &Arc<Graph>,
-        capacities: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool>;
-    fn name(&self) -> &'static str;
+pub struct Params {
+    pub length_range: Range<usize>,
+    pub first_activity: Vec<Purpose>,
+    pub duration_min: u8,
+}
+pub struct Filter {
+    params: Params,
+    nodes: Vec<Node>,
+    edges: Vec<Edge>,
+}
+impl Deref for Filter {
+    type Target = Params;
+    fn deref(&self) -> &Self::Target {
+        &self.params
+    }
 }
 
-#[derive(Clone, Copy)]
-pub struct CombinedFilter {
-    length: LengthFilter,
-    first_activity: FirstActivityFilter,
-    duration: DurationFilter,
-    activity_cycle: ActivityCycleFilter,
-    distinct_activities: DistinctActivitesFilter,
-    capacity: CapacityFilter,
-}
-impl CombinedFilter {
-    pub fn new(source: &Node) -> Self {
-        CombinedFilter {
-            length: LengthFilter::new(
-                source,
-                LengthFilterParam {
-                    min_length: 2,
-                    max_length: 6,
-                },
-            ),
-            first_activity: FirstActivityFilter::new(
-                source,
-                FirstActivityFilterParam {
-                    activity: Purpose::Home,
-                },
-            ),
-            duration: DurationFilter::new(
-                source,
-                DurationFilterParam {
-                    min_time_bin_count: 40,
-                    max_time_bin_count: 48,
-                },
-            ),
-            activity_cycle: ActivityCycleFilter::new(source, ()),
-            distinct_activities: DistinctActivitesFilter::new(source, ()),
-            capacity: CapacityFilter::new(source, ()),
+impl Filter {
+    pub fn new(params: Params, node: Node) -> Option<Self> {
+        if !params.first_activity.contains(&node.purpose) {
+            return None;
+        }
+        Some(Filter {
+            params,
+            nodes: vec![node],
+            edges: Vec::new(),
+        })
+    }
+
+    pub fn to_parent(&mut self) {
+        assert!(self.edges.pop().is_some());
+        self.nodes.pop();
+    }
+
+    pub fn to_child(&mut self, target: &Node, edge: &Edge) -> Result<bool, ()> {
+        match self.check(target, edge) {
+            Some(false) => Err(()),
+            v => {
+                self.nodes.push(*target);
+                self.edges.push(*edge);
+                Ok(v.is_some())
+            }
         }
     }
-    pub fn expand(
-        &mut self,
-        edge_index: EdgeIndex,
-        graph: &Arc<Graph>,
-        capacities: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool> {
-        let edge = graph.edge(edge_index);
-        let target = graph.node(graph.target_index(edge_index));
-        let mut result = Some(true);
-        macro_rules! update_result {
-            ($filter:expr) => {
-                match $filter.expand(edge, target, graph, capacities) {
-                    Some(false) => return Some(false),
-                    None => result = None,
-                    _ => {}
+    fn check(&self, target: &Node, edge: &Edge) -> Option<bool> {
+        let mut is_valid_path = true;
+        macro_rules! check {
+            ($check:expr) => {
+                if $check.is_none() {
+                    is_valid_path = false;
+                } else if !$check.unwrap() {
+                    return Some(false);
                 }
             };
         }
-        update_result!(self.length);
-        update_result!(self.first_activity);
-        update_result!(self.duration);
-        update_result!(self.activity_cycle);
-        update_result!(self.distinct_activities);
-        update_result!(self.capacity);
-        result
-    }
-    pub fn capacity_filter(&self) -> &CapacityFilter {
-        &self.capacity
-    }
-}
-
-// LENGTH
-#[derive(Clone, Copy)]
-pub struct LengthFilter {
-    length: usize,
-    param: LengthFilterParam,
-}
-#[derive(Clone, Copy)]
-pub struct LengthFilterParam {
-    pub max_length: usize,
-    pub min_length: usize,
-}
-impl Filter for LengthFilter {
-    type Param = LengthFilterParam;
-    fn new(_: &Node, param: Self::Param) -> Self {
-        LengthFilter { length: 0, param }
-    }
-    fn expand(
-        &mut self,
-        _: &Edge,
-        _: &Node,
-        _: &Arc<Graph>,
-        _: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool> {
-        self.length += 1;
-        match self.length {
-            length if length > self.param.max_length => Some(false),
-            length if length < self.param.min_length => None,
-            _ => Some(true),
-        }
-    }
-    fn name(&self) -> &'static str { "length" }
-}
-
-// FIRST ACTIVITY
-#[derive(Clone, Copy)]
-pub struct FirstActivityFilter {
-    valid: bool,
-}
-pub struct FirstActivityFilterParam {
-    pub activity: Purpose,
-}
-impl Filter for FirstActivityFilter {
-    type Param = FirstActivityFilterParam;
-    fn new(node: &Node, param: Self::Param) -> Self {
-        FirstActivityFilter {
-            valid: node.purpose == param.activity,
-        }
-    }
-    fn expand(
-        &mut self,
-        _: &Edge,
-        _: &Node,
-        _: &Arc<Graph>,
-        _: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool> {
-        Some(self.valid)
-    }
-    fn name(&self) -> &'static str { "first activity" }
-}
-
-// DURATION
-#[derive(Clone, Copy)]
-pub struct DurationFilter {
-    time_bin_count: usize,
-    last_time_bin: TimeBin,
-    param: DurationFilterParam,
-}
-#[derive(Clone, Copy)]
-pub struct DurationFilterParam {
-    pub max_time_bin_count: usize,
-    pub min_time_bin_count: usize,
-}
-impl Filter for DurationFilter {
-    type Param = DurationFilterParam;
-    fn new(node: &Node, param: Self::Param) -> Self {
-        DurationFilter {
-            time_bin_count: 0,
-            last_time_bin: node.time_bin,
-            param,
-        }
-    }
-    fn expand(
-        &mut self,
-        _: &Edge,
-        target: &Node,
-        _: &Arc<Graph>,
-        _: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool> {
-        self.time_bin_count += if self.last_time_bin.value() < target.time_bin.value() {
-            target.time_bin.value() - self.last_time_bin.value()
-        } else {
-            target.time_bin.value() + time_bins::COUNT - self.last_time_bin.value()
-        };
-        self.last_time_bin = target.time_bin;
-        match self.time_bin_count {
-            count if count > self.param.max_time_bin_count => Some(false),
-            count if count < self.param.min_time_bin_count => None,
-            _ => Some(true),
-        }
-    }
-    fn name(&self) -> &'static str { "duration" }
-}
-
-// ACTIVITY CYCLE
-#[derive(Clone, Copy)]
-pub struct ActivityCycleFilter {
-    first_activity: Purpose,
-}
-impl Filter for ActivityCycleFilter {
-    type Param = ();
-    fn new(node: &Node, _: Self::Param) -> Self {
-        ActivityCycleFilter {
-            first_activity: node.purpose,
-        }
-    }
-    fn expand(
-        &mut self,
-        _: &Edge,
-        target: &Node,
-        _: &Arc<Graph>,
-        _: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool> {
-        if self.first_activity == target.purpose {
+        check!(self.check_length());
+        check!(self.check_duration(target));
+        check!(self.check_activity_cycle(target));
+        check!(self.check_distinct_activities(target));
+        if is_valid_path {
             Some(true)
         } else {
             None
         }
     }
-    fn name(&self) -> &'static str { "activity cycle" }
-}
-
-// DISTINCT ACTIVITIES
-#[derive(Clone, Copy)]
-pub struct DistinctActivitesFilter {
-    activities: [bool; Purpose::COUNT as usize],
-}
-impl Filter for DistinctActivitesFilter {
-    type Param = ();
-    fn new(_: &Node, _: Self::Param) -> Self {
-        DistinctActivitesFilter {
-            activities: [false; Purpose::COUNT as usize],
-        }
-    }
-    fn expand(
-        &mut self,
-        edge: &Edge,
-        _: &Node,
-        _: &Arc<Graph>,
-        _: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool> {
-        // origin of trip includes first activity but is still compatible with activity cycle
-        let index = edge.trip.category.origin as usize;
-        let prev = self.activities[index];
-        self.activities[index] = true;
-        Some(!prev)
-    }
-    fn name(&self) -> &'static str { "distinct activities" }
-}
-
-// CAPACITY
-#[derive(Clone, Copy)]
-pub struct CapacityFilter {
-    trip_counts: [Option<(usize, usize)>; time_bins::COUNT / 2],
-    level_counts: [Option<(usize, TimeBin, usize)>; time_bins::COUNT / 2],
-    mode_counts: [usize; modes::COUNT],
-}
-impl Filter for CapacityFilter {
-    type Param = ();
-    fn new(_: &Node, _: Self::Param) -> CapacityFilter {
-        CapacityFilter {
-            trip_counts: [None; time_bins::COUNT / 2],
-            level_counts: [None; time_bins::COUNT / 2],
-            mode_counts: [0; modes::COUNT],
-        }
-    }
-    fn expand(
-        &mut self,
-        edge: &Edge,
-        node: &Node,
-        _: &Arc<Graph>,
-        capacities: &RwLockReadGuard<Capacities>,
-    ) -> Option<bool> {
-        let trip_index = self
-            .trip_counts
-            .iter()
-            .position(|option| option.is_none() || option.unwrap().0 == edge.trip.index)
-            .unwrap();
-        if self.trip_counts[trip_index].is_none() {
-            self.trip_counts[trip_index] = Some((edge.trip.index, 1));
+    fn check_length(&self) -> Option<bool> {
+        if self.nodes.len() < self.length_range.start {
+            None
         } else {
-            self.trip_counts[trip_index] = {
-                let mut prev = self.trip_counts[trip_index].unwrap();
-                prev.1 += 1;
-                Some(prev)
-            };
+            Some(self.nodes.len() < self.length_range.end)
         }
-        let level_index = self
-            .level_counts
-            .iter()
-            .position(|option| {
-                option.is_none() || {
-                    let level_count = option.unwrap();
-                    level_count.0 == edge.trip.category.index && level_count.1 == node.time_bin
-                }
-            })
-            .unwrap();
-        if self.level_counts[level_index].is_none() {
-            self.level_counts[level_index] = Some((edge.trip.category.index, node.time_bin, 1));
+    }
+    fn check_duration(&self, target: &Node) -> Option<bool> {
+        let duration = target.time_bin - self.nodes.first().unwrap().time_bin;
+        if duration > time_bins::COUNT as u8 {
+            return Some(false);
+        }
+        if duration < self.duration_min {
+            None
         } else {
-            self.level_counts[level_index] = {
-                let mut prev = self.level_counts[level_index].unwrap();
-                prev.2 += 1;
-                Some(prev)
-            };
+            Some(true)
         }
-        let mode_index = edge.mode.index;
-        self.mode_counts[mode_index] += 1;
-
+    }
+    fn check_activity_cycle(&self, target: &Node) -> Option<bool> {
+        if target.purpose.eq(&self.nodes.first().unwrap().purpose) {
+            Some(true)
+        } else {
+            None
+        }
+    }
+    fn check_distinct_activities(&self, target: &Node) -> Option<bool> {
         Some(
-            capacities.get_trip(edge.trip) >= self.trip_counts[trip_index].unwrap().1
-                && capacities.get_level(edge.trip.category, node.time_bin)
-                    >= self.level_counts[level_index].unwrap().2
-                && capacities.get_mode(edge.mode) >= self.mode_counts[mode_index],
+            self.nodes
+                .iter()
+                .find(|node| node.purpose.eq(&target.purpose))
+                .is_none(),
         )
     }
-    fn name(&self) -> &'static str { "capacity" }
-}
-impl CapacityFilter {
-    pub fn try_extracting(&self, capacities: &mut RwLockWriteGuard<Capacities>) -> Result<(), ()> {
-        macro_rules! unwrap_or_continue {
-            ($o: expr) => {
-                match $o {
-                    Some(v) => v,
-                    None => continue,
-                }
-            };
-        }
-        // check
-        for trip_count in self.trip_counts.iter() {
-            let (index, count) = unwrap_or_continue!(trip_count);
-            if capacities.get_trip(&TRIPS[*index]) < *count {
-                return Err(());
-            }
-        }
-        for level_count in self.level_counts.iter() {
-            let (category_index, time_bin, count) = unwrap_or_continue!(level_count);
-            if capacities.get_level(&CATEGORIES[*category_index], *time_bin) < *count {
-                return Err(());
-            }
-        }
-        for (index, count) in self.mode_counts.iter().enumerate() {
-            if capacities.get_mode(&MODES[index]) < *count {
-                return Err(());
-            }
-        }
-        // extract
-        for trip_count in self.trip_counts.iter() {
-            let (index, count) = unwrap_or_continue!(trip_count);
-            let trip = &TRIPS[*index];
-            let capacity = capacities.get_trip(trip);
-            capacities.set_trip(trip, capacity - count);
-        }
-        for level_count in self.level_counts.iter() {
-            let (category_index, time_bin, count) = unwrap_or_continue!(level_count);
-            let category = &CATEGORIES[*category_index];
-            let capacity = capacities.get_level(category, *time_bin);
-            capacities.set_level(category, *time_bin, capacity - count);
-        }
-        for (index, count) in self.mode_counts.iter().enumerate() {
-            let mode = &MODES[index];
-            let capacity = capacities.get_mode(mode);
-            capacities.set_mode(mode, capacity - count);
-        }
-        Ok(())
+    pub fn try_extracting(&self) -> Vec<(Node, Edge)> {
+        self.nodes
+            .iter()
+            .copied()
+            .zip(self.edges.iter().copied())
+            .collect()
     }
 }

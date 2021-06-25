@@ -1,4 +1,5 @@
 use super::trips::Transport;
+use std::hash::{Hash, Hasher};
 use lazy_static::lazy_static;
 
 pub struct Mode {
@@ -7,6 +8,17 @@ pub struct Mode {
     pub share: f64,
     pub transport: Transport,
     _priv: (),
+}
+impl PartialEq for Mode {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index
+    }
+}
+impl Eq for Mode {}
+impl Hash for Mode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.index.hash(state);
+    }
 }
 
 pub const COUNT: usize = 5;

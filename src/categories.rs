@@ -2,6 +2,7 @@ use super::io;
 use super::purposes::Purpose;
 use lazy_static::lazy_static;
 use std::fmt::{Display, Formatter, Result};
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
 #[derive(PartialEq, Eq)]
@@ -24,6 +25,11 @@ impl PartialEq for Category {
     }
 }
 impl Eq for Category {}
+impl Hash for Category {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id.0.hash(state);
+    }
+}
 
 lazy_static! {
     pub static ref CATEGORIES: Vec<Category> = load();

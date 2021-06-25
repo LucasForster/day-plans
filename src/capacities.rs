@@ -7,6 +7,7 @@ use std::convert::TryInto;
 
 type Count = usize;
 
+#[derive(Clone)]
 pub struct Capacities {
     of_trips: Vec<Count>,
     of_levels: Vec<[Count; time_bins::COUNT]>,
@@ -48,14 +49,17 @@ impl Capacities {
     pub fn get_mode(&self, mode: &Mode) -> Count {
         self.of_modes[mode.index]
     }
-    pub fn set_trip(&mut self, trip: &Trip, count: Count) {
-        self.of_trips[trip.index] = count;
+    pub fn reduce_trip(&mut self, trip: &Trip, count: Count) {
+        self.of_trips[trip.index] -= count;
+        debug_assert!(self.of_trips[trip.index] >= 0);
     }
-    pub fn set_level(&mut self, category: &Category, time_bin: TimeBin, count: Count) {
-        self.of_levels[category.index][time_bin.value()] = count;
+    pub fn reduce_level(&mut self, category: &Category, time_bin: TimeBin, count: Count) {
+        self.of_levels[category.index][time_bin.value()] -= count;
+        debug_assert!(self.of_levels[category.index][time_bin.value()] >= 0);
     }
-    pub fn set_mode(&mut self, mode: &Mode, count: Count) {
-        self.of_modes[mode.index] = count;
+    pub fn reduce_mode(&mut self, mode: &Mode, count: Count) {
+        self.of_modes[mode.index] -= count;
+        debug_assert!(self.of_modes[mode.index] >= 0);
     }
 }
 
