@@ -49,7 +49,7 @@ fn load() -> Vec<Trip> {
             let path = format!(
                 "verkehrsfluss/verkehrsflussdaten/{} ascii.{:03}",
                 transport.to_str(),
-                category.id
+                category.id.value()
             );
             let records = io::read_csv(path, true, false, b' ', Some(b'C'));
             for record in records {

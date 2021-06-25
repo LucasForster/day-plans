@@ -1,15 +1,14 @@
 use super::io;
 use super::purposes::Purpose;
 use lazy_static::lazy_static;
-use std::fmt::{Display, Formatter, Result};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
 #[derive(PartialEq, Eq)]
 pub struct Id(u8);
-impl Display for Id {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", self.0)
+impl Id {
+    pub fn value(&self) -> u8 {
+        self.0
     }
 }
 pub struct Category {
