@@ -51,15 +51,15 @@ impl Capacities {
     }
     pub fn reduce_trip(&mut self, trip: &Trip, count: Count) {
         self.of_trips[trip.index] -= count;
-        debug_assert!(self.of_trips[trip.index] >= 0);
+        assert!(self.of_trips[trip.index] >= 0);
     }
     pub fn reduce_level(&mut self, category: &Category, time_bin: TimeBin, count: Count) {
         self.of_levels[category.index][time_bin.value()] -= count;
-        debug_assert!(self.of_levels[category.index][time_bin.value()] >= 0);
+        assert!(self.of_levels[category.index][time_bin.value()] >= 0);
     }
     pub fn reduce_mode(&mut self, mode: &Mode, count: Count) {
         self.of_modes[mode.index] -= count;
-        debug_assert!(self.of_modes[mode.index] >= 0);
+        assert!(self.of_modes[mode.index] >= 0);
     }
 }
 

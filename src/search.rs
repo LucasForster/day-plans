@@ -1,4 +1,5 @@
-use super::filters::{self, Filter};
+use super::capacities::Capacities;
+use super::filters::{self, Filter, PotentialPath};
 use super::graph::{Edge, Graph, Node};
 use super::purposes::Purpose;
 use petgraph::graph::{EdgeIndex, NodeIndex};
@@ -10,11 +11,12 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
 
     let graph = Arc::new(Graph::new());
+    let mut capacities = Capacities::new();
 
     let node_indices = graph.node_indices();
     let chunk_size = (node_indices.len() as f64 / 10000f64).ceil() as usize;
 
-    let mut result: Vec<Vec<(Node, Edge)>> = Vec::new();
+    let mut plans: Vec<Vec<(Node, Edge)>> = Vec::new();
     let mut total_steps: u64 = 0;
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
@@ -25,39 +27,51 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             secs % 60,
             chunk_count / 100,
             chunk_count % 100,
-            result.len(),
+            plans.len(),
             total_steps,
         );
-        let mut chunk_result = chunk
+        let capacities_arc = Arc::new(capacities.clone());
+        let (potential_paths, step_sum) = chunk
             .par_iter()
-            .map(|&node_index| execute(graph.clone(), node_index))
+            .map(|&node_index| execute(graph.clone(), node_index, capacities_arc.clone()))
             .reduce(
                 || (Vec::new(), 0u64),
-                |(mut acc, total_steps), (mut result, search_steps)| {
-                    acc.append(&mut result);
-                    (acc, total_steps + search_steps)
+                |(mut acc, sum), (mut potential_paths, steps)| {
+                    acc.append(&mut potential_paths);
+                    (acc, sum + steps)
                 },
             );
-        result.append(&mut chunk_result.0);
-        total_steps += chunk_result.1;
+        total_steps += step_sum;
+        for potential_path in potential_paths {
+            while potential_path
+                .try_extracting(&mut capacities, &mut plans)
+                .is_ok()
+            {}
+        }
     }
-    println!("Found {} plans.", result.len());
-    result
+    println!("Found {} plans.", plans.len());
+    plans
 }
 
-fn execute(graph: Arc<Graph>, node_index: NodeIndex) -> (Vec<Vec<(Node, Edge)>>, u64) {
-    let filter_params = filters::Params {
+fn execute(
+    graph: Arc<Graph>,
+    node_index: NodeIndex,
+    capacities: Arc<Capacities>,
+) -> (Vec<PotentialPath>, u64) {
+    let filter_params = filters::FilterParams {
         length_range: (2..6),
         first_activity: vec![Purpose::Home],
         duration_min: 40,
+        capacities,
     };
 
-    let mut plans: Vec<Vec<(Node, Edge)>> = Vec::new();
+    let mut plans: Vec<PotentialPath> = Vec::new();
     let mut search_steps: u64 = 0;
     let mut filter = match Filter::new(filter_params, *graph.node(node_index)) {
-        Some(filter) => filter,
-        None => return (plans, search_steps),
+        Ok(filter) => filter,
+        Err(()) => return (plans, search_steps),
     };
+
     let mut node_indices = vec![node_index];
     let mut edge_indices: Vec<EdgeIndex> = Vec::new();
 
@@ -70,38 +84,37 @@ fn execute(graph: Arc<Graph>, node_index: NodeIndex) -> (Vec<Vec<(Node, Edge)>>,
         };
     }
 
-    fn try_extracting(filter: &Filter, plans: &mut Vec<Vec<(Node, Edge)>>) {
-        plans.push(filter.try_extracting());
-    }
-
-    fn to_child<'c>(
+    fn to_child(
         search_steps: &mut u64,
         edge_indices: &mut Vec<EdgeIndex>,
         node_indices: &mut Vec<NodeIndex>,
         filter: &mut Filter,
         graph: &Graph,
-        plans: &mut Vec<Vec<(Node, Edge)>>,
+        plans: &mut Vec<PotentialPath>,
     ) -> bool {
         *search_steps += 1;
         let edge_index = unwrap_or_return!(graph.first_edge(*node_indices.last().unwrap()), false);
         let target_index = graph.target_index(edge_index);
         match filter.to_child(graph.node(target_index), graph.edge(edge_index)) {
             Err(()) => return false,
-            Ok(false) => {}
-            Ok(true) => try_extracting(filter, plans),
+            Ok(option) => {
+                edge_indices.push(edge_index);
+                node_indices.push(target_index);
+                if option.is_some() {
+                    plans.push(option.unwrap());
+                }
+                return true;
+            }
         }
-        edge_indices.push(edge_index);
-        node_indices.push(target_index);
-        true
     }
 
-    fn to_sibling<'c>(
+    fn to_sibling(
         search_steps: &mut u64,
         edge_indices: &mut Vec<EdgeIndex>,
         node_indices: &mut Vec<NodeIndex>,
         filter: &mut Filter,
         graph: &Graph,
-        plans: &mut Vec<Vec<(Node, Edge)>>,
+        plans: &mut Vec<PotentialPath>,
     ) -> bool {
         *search_steps += 1;
         let prev_edge_index = unwrap_or_return!(edge_indices.pop(), false);
@@ -118,19 +131,22 @@ fn execute(graph: Arc<Graph>, node_index: NodeIndex) -> (Vec<Vec<(Node, Edge)>>,
         let sibling_target_index = graph.target_index(sibling_edge_index);
         match filter.to_child(
             graph.node(sibling_target_index),
-            graph.edge(sibling_edge_index)
+            graph.edge(sibling_edge_index),
         ) {
             Err(()) => {
                 edge_indices.push(prev_edge_index);
                 node_indices.push(prev_target_index);
                 return false;
             }
-            Ok(false) => {}
-            Ok(true) => try_extracting(filter, plans),
+            Ok(option) => {
+                edge_indices.push(sibling_edge_index);
+                node_indices.push(sibling_target_index);
+                if option.is_some() {
+                    plans.push(option.unwrap());
+                }
+                return true;
+            }
         }
-        edge_indices.push(sibling_edge_index);
-        node_indices.push(sibling_target_index);
-        true
     }
 
     fn to_parent(

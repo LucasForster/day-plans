@@ -1,4 +1,4 @@
-// mod capacities;
+mod capacities;
 mod categories;
 mod districts;
 mod filters;

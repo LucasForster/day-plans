@@ -7,6 +7,7 @@ use itertools::Itertools;
 use petgraph::graph::{EdgeIndex, Graph as Petgraph, NodeIndex};
 use petgraph::Direction::Outgoing;
 use std::collections::HashMap;
+use super::capacities::Capacities;
 
 pub struct Graph(Petgraph<Node, Edge>);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
@@ -78,5 +79,9 @@ impl Graph {
     }
     pub fn target_index(&self, edge_index: EdgeIndex) -> NodeIndex {
         self.0.edge_endpoints(edge_index).unwrap().1
+    }
+    pub fn filter(&mut self, capacities: &Capacities) {
+        self.0.filter_map(|_, node| Some(node), |_, edge| if capacities.get_trip(edge.trip) == 0 { None } else { Some(edge) });
+        self.0.shrink_to_fit();
     }
 }
