@@ -7,7 +7,7 @@ use rayon::prelude::*;
 use std::sync::Arc;
 use std::time::SystemTime;
 
-const NUMBER_OF_CHUNKS: usize = 1000;
+const NUMBER_OF_CHUNKS: usize = 100;
 
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
@@ -44,6 +44,7 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
                     (acc, sum + steps)
                 },
             );
+        println!("{}", potential_paths.len());
         total_steps += step_sum;
         let prev_plan_count = plans.len();
         for potential_path in potential_paths {

@@ -61,21 +61,25 @@ impl Filter {
     fn check(&self, target: &Node, edge: &Edge) -> Result<bool, ()> {
         let mut is_valid_path = true;
         macro_rules! check {
-            ($check:expr) => {
+            ($check:expr, $name:expr) => {
                 if $check.is_none() {
                     is_valid_path = false;
                 } else if !$check.unwrap() {
+                    // println!($name);
                     return Err(());
                 }
             };
         }
-        check!(self.check_length());
-        check!(self.check_duration(target));
-        check!(self.check_activity_cycle(target));
-        check!(self.check_distinct_activities(target));
-        check!(self.check_trip_capacity(edge));
-        check!(self.check_level_capacity(target, edge));
-        check!(self.check_mode_capacity(edge));
+        check!(self.check_length(), "length");
+        check!(self.check_duration(target), "duration");
+        check!(self.check_activity_cycle(target), "cycle");
+        check!(self.check_distinct_activities(target), "distinct");
+        check!(self.check_trip_capacity(edge), "tripcap");
+        check!(self.check_level_capacity(target, edge), "levelcap");
+        check!(self.check_mode_capacity(edge), "modecap");
+        // if is_valid_path {
+        //     println!("valid");
+        // }
         Ok(is_valid_path)
     }
     fn check_length(&self) -> Option<bool> {
