@@ -7,26 +7,28 @@ use rayon::prelude::*;
 use std::sync::Arc;
 use std::time::SystemTime;
 
+const NUMBER_OF_CHUNKS: usize = 1000;
+
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
 
     let mut graph = Graph::new();
     let mut capacities = Capacities::new();
 
-    let node_indices = graph.node_indices();
-    let chunk_size = (node_indices.len() as f64 / 10000f64).ceil() as usize;
+    let node_indices: Vec<NodeIndex> = graph.node_indices();
+    assert!(NUMBER_OF_CHUNKS < node_indices.len());
+    let chunk_size = (node_indices.len() as f64 / (NUMBER_OF_CHUNKS as f64)).ceil() as usize;
 
     let mut plans: Vec<Vec<(Node, Edge)>> = Vec::new();
     let mut total_steps: u64 = 0;
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
         println!(
-            "{:2}:{:02}:{:02} {:2}.{:02}% {:4} plans, {:<7.2e} steps",
+            "{:02}:{:02}:{:02} {:2.02}% {:4} plans, {:<7.2e} steps",
             ((secs / 60) / 60) % 60,
             (secs / 60) % 60,
             secs % 60,
-            chunk_count / 100,
-            chunk_count % 100,
+            100 * chunk_count / NUMBER_OF_CHUNKS,
             plans.len(),
             total_steps,
         );
