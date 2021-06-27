@@ -107,6 +107,7 @@ impl Filter {
         Some(
             self.nodes
                 .iter()
+                .skip(1)
                 .find(|node| node.purpose.eq(&target.purpose))
                 .is_none(),
         )
