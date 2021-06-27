@@ -10,7 +10,7 @@ use std::time::SystemTime;
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
 
-    let graph = Arc::new(Graph::new());
+    let mut graph = Graph::new();
     let mut capacities = Capacities::new();
 
     let node_indices = graph.node_indices();
@@ -30,10 +30,11 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             plans.len(),
             total_steps,
         );
+        let graph_arc = Arc::new(graph.clone());
         let capacities_arc = Arc::new(capacities.clone());
         let (potential_paths, step_sum) = chunk
             .par_iter()
-            .map(|&node_index| execute(graph.clone(), node_index, capacities_arc.clone()))
+            .map(|&node_index| execute(graph_arc.clone(), node_index, capacities_arc.clone()))
             .reduce(
                 || (Vec::new(), 0u64),
                 |(mut acc, sum), (mut potential_paths, steps)| {
@@ -42,11 +43,15 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
                 },
             );
         total_steps += step_sum;
+        let prev_plan_count = plans.len();
         for potential_path in potential_paths {
             while potential_path
                 .try_extracting(&mut capacities, &mut plans)
                 .is_ok()
             {}
+        }
+        if plans.len() > prev_plan_count {
+            graph.filter(&capacities);
         }
     }
     println!("Found {} plans.", plans.len());
