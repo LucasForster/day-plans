@@ -1,5 +1,5 @@
 use super::capacities::Capacities;
-use super::filters::{self, Filter, PotentialPath};
+use super::filters::{Filter, FilterParams, PotentialPath};
 use super::graph::{Edge, Graph, Node};
 use super::purposes::Purpose;
 use petgraph::graph::{EdgeIndex, NodeIndex};
@@ -66,7 +66,7 @@ fn execute(
     node_index: NodeIndex,
     capacities: Arc<Capacities>,
 ) -> (Vec<PotentialPath>, u64) {
-    let filter_params = filters::FilterParams {
+    let filter_params = FilterParams {
         length_range: (2..6),
         first_activity: vec![Purpose::Home],
         duration_min: 40,
