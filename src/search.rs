@@ -37,6 +37,7 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             plans.len(),
             total_steps,
         );
+
         let (potential_paths, step_sum) = chunk
             .par_iter()
             .map(|&node_index| execute(graph_arc.clone(), node_index, capacities_arc.clone()))
@@ -47,8 +48,8 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
                     (acc, sum + steps)
                 },
             );
-        println!("{}", potential_paths.len());
         total_steps += step_sum;
+
         let prev_plan_count = plans.len();
         let mut capacities = match Arc::try_unwrap(capacities_arc) {
             Ok(capacities) => capacities,
@@ -109,11 +110,11 @@ fn execute(
         *search_steps += 1;
         let edge_index = unwrap_or_return!(graph.first_edge(*node_indices.last().unwrap()), false);
         let target_index = graph.target_index(edge_index);
+        edge_indices.push(edge_index);
+        node_indices.push(target_index);
         match filter.to_child(graph.node(target_index), graph.edge(edge_index)) {
             Err(()) => return false,
             Ok(option) => {
-                edge_indices.push(edge_index);
-                node_indices.push(target_index);
                 if option.is_some() {
                     plans.push(option.unwrap());
                 }
@@ -129,37 +130,33 @@ fn execute(
         filter: &mut Filter,
         graph: &Graph,
         plans: &mut Vec<PotentialPath>,
-    ) -> bool {
+    ) -> Result<bool, ()> {
         *search_steps += 1;
-        let prev_edge_index = unwrap_or_return!(edge_indices.pop(), false);
+        let prev_edge_index = unwrap_or_return!(edge_indices.pop(), Err(()));
         let prev_target_index = node_indices.pop().unwrap();
         let sibling_edge_index = match graph.next_edge(prev_edge_index) {
             Some(sibling) => sibling,
             None => {
                 edge_indices.push(prev_edge_index);
                 node_indices.push(prev_target_index);
-                return false;
+                return Err(());
             }
         };
-        filter.to_parent();
         let sibling_target_index = graph.target_index(sibling_edge_index);
+        edge_indices.push(sibling_edge_index);
+        node_indices.push(sibling_target_index);
+
+        filter.to_parent();
         match filter.to_child(
             graph.node(sibling_target_index),
             graph.edge(sibling_edge_index),
         ) {
-            Err(()) => {
-                filter.to_child(graph.node(prev_target_index), graph.edge(prev_edge_index)).expect("");
-                edge_indices.push(prev_edge_index);
-                node_indices.push(prev_target_index);
-                return false;
-            }
+            Err(()) => Ok(false),
             Ok(option) => {
-                edge_indices.push(sibling_edge_index);
-                node_indices.push(sibling_target_index);
                 if option.is_some() {
                     plans.push(option.unwrap());
                 }
-                return true;
+                Ok(true)
             }
         }
     }
@@ -196,10 +193,14 @@ fn execute(
                 &graph,
                 &mut plans,
             );
-            if !to_sibling {
-                let to_parent = to_parent(&mut edge_indices, &mut node_indices, &mut filter);
-                if !to_parent {
-                    return (plans, search_steps);
+            match to_sibling {
+                Ok(true) => break,
+                Ok(false) => continue,
+                Err(()) => {
+                    let to_parent = to_parent(&mut edge_indices, &mut node_indices, &mut filter);
+                    if !to_parent {
+                        return (plans, search_steps);
+                    }
                 }
             }
         }

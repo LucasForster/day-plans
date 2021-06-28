@@ -43,20 +43,17 @@ impl Filter {
     }
 
     pub fn to_child(&mut self, target: &Node, edge: &Edge) -> Result<Option<PotentialPath>, ()> {
+        self.nodes.push(*target);
+        self.edges.push(*edge);
         match self.check(target, edge) {
+            Ok(true) => {
+                Ok(Some(PotentialPath {
+                    nodes: self.nodes.clone(),
+                    edges: self.edges.clone(),
+                }))
+            },
+            Ok(false) => Ok(None),
             Err(()) => Err(()),
-            Ok(valid) => {
-                self.nodes.push(*target);
-                self.edges.push(*edge);
-                if valid {
-                    Ok(Some(PotentialPath {
-                        nodes: self.nodes.clone(),
-                        edges: self.edges.clone(),
-                    }))
-                } else {
-                    Ok(None)
-                }
-            }
         }
     }
     fn check(&self, target: &Node, edge: &Edge) -> Result<bool, ()> {
