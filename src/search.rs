@@ -20,7 +20,17 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let mut graph_arc = Arc::new(Graph::new());
     let mut capacities_arc = Arc::new(Capacities::new());
 
-    let node_indices: Vec<NodeIndex> = graph_arc.node_indices();
+    let node_indices: Vec<NodeIndex> = graph_arc
+        .node_indices()
+        .into_iter()
+        .filter(|&node_index| {
+            FILTER_PARAMS
+                .first_activity
+                .iter()
+                .find(|&purpose| graph_arc.node(node_index).purpose.eq(purpose))
+                .is_some()
+        })
+        .collect();
     assert!(NUMBER_OF_CHUNKS < node_indices.len());
     let chunk_size = (node_indices.len() as f64 / (NUMBER_OF_CHUNKS as f64)).ceil() as usize;
 
