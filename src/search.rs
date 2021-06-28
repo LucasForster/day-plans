@@ -39,10 +39,11 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
         println!(
-            "{:02}:{:02}:{:02} {:.02}% {:4} plans, {:<7.2e} steps",
+            "{:02}:{:02}:{:02} {:.*}% {:4} plans, {:<7.2e} steps",
             ((secs / 60) / 60) % 60,
             (secs / 60) % 60,
             secs % 60,
+            ((NUMBER_OF_CHUNKS / 100) as f64).log10().ceil() as usize,
             (100 * chunk_count) as f64 / NUMBER_OF_CHUNKS as f64,
             plans.len(),
             total_steps,
