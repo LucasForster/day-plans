@@ -71,7 +71,6 @@ impl Filter {
         check!(self.check_length(), "length");
         check!(self.check_duration(target), "duration");
         check!(self.check_activity_cycle(target), "cycle");
-        check!(self.check_distinct_activities(target), "distinct");
         check!(self.check_trip_capacity(edge), "tripcap");
         check!(self.check_level_capacity(target, edge), "levelcap");
         check!(self.check_mode_capacity(edge), "modecap");
@@ -104,15 +103,6 @@ impl Filter {
         } else {
             None
         }
-    }
-    fn check_distinct_activities(&self, target: &Node) -> Option<bool> {
-        Some(
-            self.nodes
-                .iter()
-                .skip(1)
-                .find(|node| node.purpose.eq(&target.purpose))
-                .is_none(),
-        )
     }
     fn check_trip_capacity(&self, edge: &Edge) -> Option<bool> {
         let prev_count = self
