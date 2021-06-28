@@ -8,6 +8,11 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 const NUMBER_OF_CHUNKS: usize = 100;
+const FILTER_PARAMS: FilterParams = FilterParams {
+    length_range: (2..6),
+    first_activity: &[Purpose::Home],
+    duration_min: 40,
+};
 
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
@@ -74,16 +79,9 @@ fn execute(
     node_index: NodeIndex,
     capacities: Arc<Capacities>,
 ) -> (Vec<PotentialPath>, u64) {
-    let filter_params = FilterParams {
-        length_range: (2..6),
-        first_activity: vec![Purpose::Home],
-        duration_min: 40,
-        capacities,
-    };
-
     let mut plans: Vec<PotentialPath> = Vec::new();
     let mut search_steps: u64 = 0;
-    let mut filter = match Filter::new(filter_params, *graph.node(node_index)) {
+    let mut filter = match Filter::new(FILTER_PARAMS, *graph.node(node_index), capacities) {
         Ok(filter) => filter,
         Err(()) => return (plans, search_steps),
     };

@@ -8,14 +8,14 @@ use std::sync::Arc;
 
 pub struct FilterParams {
     pub length_range: Range<usize>,
-    pub first_activity: Vec<Purpose>,
+    pub first_activity: &'static [Purpose],
     pub duration_min: u8,
-    pub capacities: Arc<Capacities>,
 }
 pub struct Filter {
     params: FilterParams,
     nodes: Vec<Node>,
     edges: Vec<Edge>,
+    pub capacities: Arc<Capacities>,
 }
 impl Deref for Filter {
     type Target = FilterParams;
@@ -25,7 +25,7 @@ impl Deref for Filter {
 }
 
 impl Filter {
-    pub fn new(params: FilterParams, node: Node) -> Result<Self, ()> {
+    pub fn new(params: FilterParams, node: Node, capacities: Arc<Capacities>) -> Result<Self, ()> {
         if !params.first_activity.contains(&node.purpose) {
             return Err(());
         }
@@ -33,6 +33,7 @@ impl Filter {
             params,
             nodes: vec![node],
             edges: Vec::new(),
+            capacities,
         })
     }
 
