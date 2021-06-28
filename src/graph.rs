@@ -74,9 +74,6 @@ impl Graph {
     pub fn next_edge(&self, edge_index: EdgeIndex) -> Option<EdgeIndex> {
         self.0.next_edge(edge_index, Outgoing)
     }
-    pub fn source_index(&self, edge_index: EdgeIndex) -> NodeIndex {
-        self.0.edge_endpoints(edge_index).unwrap().0
-    }
     pub fn target_index(&self, edge_index: EdgeIndex) -> NodeIndex {
         self.0.edge_endpoints(edge_index).unwrap().1
     }

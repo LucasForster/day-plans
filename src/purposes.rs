@@ -9,7 +9,6 @@ pub enum Purpose {
     School,
     Service,
     Shopping,
-    COUNT,
 }
 impl FromStr for Purpose {
     type Err = String;
@@ -51,7 +50,6 @@ impl Purpose {
             Self::Leisure => hours!(2),
             Self::Shopping => hours!(1),
             Self::Service => minutes!(30),
-            Self::COUNT => panic!(),
         }
     }
 }
