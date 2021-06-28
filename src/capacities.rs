@@ -7,7 +7,6 @@ use std::convert::TryInto;
 
 type Count = usize;
 
-#[derive(Clone)]
 pub struct Capacities {
     of_trips: Vec<Count>,
     of_levels: Vec<[Count; time_bins::COUNT]>,

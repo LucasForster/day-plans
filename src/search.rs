@@ -12,10 +12,10 @@ const NUMBER_OF_CHUNKS: usize = 100;
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
 
-    let mut graph = Graph::new();
-    let mut capacities = Capacities::new();
+    let mut graph_arc = Arc::new(Graph::new());
+    let mut capacities_arc = Arc::new(Capacities::new());
 
-    let node_indices: Vec<NodeIndex> = graph.node_indices();
+    let node_indices: Vec<NodeIndex> = graph_arc.node_indices();
     assert!(NUMBER_OF_CHUNKS < node_indices.len());
     let chunk_size = (node_indices.len() as f64 / (NUMBER_OF_CHUNKS as f64)).ceil() as usize;
 
@@ -32,8 +32,6 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             plans.len(),
             total_steps,
         );
-        let graph_arc = Arc::new(graph.clone());
-        let capacities_arc = Arc::new(capacities.clone());
         let (potential_paths, step_sum) = chunk
             .par_iter()
             .map(|&node_index| execute(graph_arc.clone(), node_index, capacities_arc.clone()))
@@ -47,14 +45,24 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
         println!("{}", potential_paths.len());
         total_steps += step_sum;
         let prev_plan_count = plans.len();
+        let mut capacities = match Arc::try_unwrap(capacities_arc) {
+            Ok(capacities) => capacities,
+            Err(_) => panic!(),
+        };
         for potential_path in potential_paths {
             while potential_path
                 .try_extracting(&mut capacities, &mut plans)
                 .is_ok()
             {}
         }
+        capacities_arc = Arc::new(capacities);
         if plans.len() > prev_plan_count {
-            graph.filter(&capacities);
+            let mut graph = match Arc::try_unwrap(graph_arc) {
+                Ok(graph) => graph,
+                Err(_) => panic!(),
+            };
+            graph.filter(&capacities_arc);
+            graph_arc = Arc::new(graph);
         }
     }
     println!("Found {} plans.", plans.len());

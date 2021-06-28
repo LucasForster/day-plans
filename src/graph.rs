@@ -9,7 +9,6 @@ use petgraph::Direction::Outgoing;
 use std::collections::HashMap;
 use super::capacities::Capacities;
 
-#[derive(Clone)]
 pub struct Graph(Petgraph<Node, Edge>);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Node {
