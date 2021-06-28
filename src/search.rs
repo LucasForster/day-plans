@@ -78,7 +78,7 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
                 Ok(graph) => graph,
                 Err(_) => panic!(),
             };
-            graph.filter(&capacities_arc);
+            graph.filter_edges(&capacities_arc);
             graph_arc = Arc::new(graph);
         }
     }

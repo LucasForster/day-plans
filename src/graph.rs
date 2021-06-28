@@ -77,8 +77,8 @@ impl Graph {
     pub fn target_index(&self, edge_index: EdgeIndex) -> NodeIndex {
         self.0.edge_endpoints(edge_index).unwrap().1
     }
-    pub fn filter(&mut self, capacities: &Capacities) {
+    pub fn filter_edges(&mut self, capacities: &Capacities) {
         self.0.filter_map(|_, node| Some(node), |_, edge| if capacities.get_trip(edge.trip) == 0 { None } else { Some(edge) });
-        self.0.shrink_to_fit();
+        self.0.shrink_to_fit_edges();
     }
 }
