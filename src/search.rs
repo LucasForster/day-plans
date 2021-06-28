@@ -150,6 +150,7 @@ fn execute(
             graph.edge(sibling_edge_index),
         ) {
             Err(()) => {
+                filter.to_child(graph.node(prev_target_index), graph.edge(prev_edge_index)).expect("");
                 edge_indices.push(prev_edge_index);
                 node_indices.push(prev_target_index);
                 return false;
