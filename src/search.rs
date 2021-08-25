@@ -80,7 +80,7 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             let prev_plan_count = plans.len();
             let mut capacities = match Arc::try_unwrap(capacities_arc) {
                 Ok(capacities) => capacities,
-                Err(_) => panic!(),
+                Err(_) => panic!("Unwrap capacities!"),
             };
             for potential_path in potential_paths {
                 while potential_path
@@ -92,7 +92,7 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             if plans.len() > prev_plan_count {
                 let mut graph = match Arc::try_unwrap(graph_arc) {
                     Ok(graph) => graph,
-                    Err(_) => panic!(),
+                    Err(_) => panic!("Unwrap graph!"),
                 };
                 graph.filter_edges(&capacities_arc);
                 graph_arc = Arc::new(graph);
