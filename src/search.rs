@@ -99,13 +99,12 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             }
         }
         print!("Plan lengths: ");
-        for i in 1..10 {
+        for i in 1..11 {
             let count = plans.iter().filter(|&plan| plan.len() == i).count();
             print!("{}: {} | ", i, count);
         }
-        println!();
     }
-    println!("Found {} plans.", plans.len());
+    println!("total: {}", plans.len());
     plans
 }
 
