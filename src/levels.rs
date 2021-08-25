@@ -16,7 +16,10 @@ pub fn get_levels(category: &Category) -> Levels {
 fn load() -> Vec<Levels> {
     let mut vec: Vec<Levels> = Vec::new();
     for category in CATEGORIES.iter() {
-        let path = format!("verkehrsfluss/verkehrsflussdaten/pegel{}.txt", category.id.value());
+        let path = format!(
+            "verkehrsfluss/verkehrsflussdaten/pegel{}.txt",
+            category.id.value()
+        );
         let record = &io::read_csv(path, true, false, b';', Some(b'/'))[0];
         let mut values = [0f64; time_bins::COUNT];
         for (i, entry) in record.iter().take(time_bins::COUNT).enumerate() {

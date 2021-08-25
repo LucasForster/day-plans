@@ -46,12 +46,10 @@ impl Filter {
         self.nodes.push(*target);
         self.edges.push(*edge);
         match self.check(target, edge) {
-            Ok(true) => {
-                Ok(Some(PotentialPath {
-                    nodes: self.nodes.clone(),
-                    edges: self.edges.clone(),
-                }))
-            },
+            Ok(true) => Ok(Some(PotentialPath {
+                nodes: self.nodes.clone(),
+                edges: self.edges.clone(),
+            })),
             Ok(false) => Ok(None),
             Err(()) => Err(()),
         }
@@ -149,7 +147,11 @@ pub struct PotentialPath {
     edges: Vec<Edge>,
 }
 impl PotentialPath {
-    pub fn try_extracting(&self, capacities: &mut Capacities, plans: &mut Vec<Vec<(Node, Edge)>>) -> Result<(), ()> {
+    pub fn try_extracting(
+        &self,
+        capacities: &mut Capacities,
+        plans: &mut Vec<Vec<(Node, Edge)>>,
+    ) -> Result<(), ()> {
         // check
         let trip_usage = self.edges.iter().map(|edge| edge.trip).counts();
         for trip in trip_usage.keys() {
@@ -190,7 +192,13 @@ impl PotentialPath {
         for mode in mode_usage.keys() {
             capacities.reduce_mode(mode, *mode_usage.get(mode).unwrap());
         }
-        plans.push(self.nodes.iter().copied().zip(self.edges.iter().copied()).collect());
+        plans.push(
+            self.nodes
+                .iter()
+                .copied()
+                .zip(self.edges.iter().copied())
+                .collect(),
+        );
         Ok(())
     }
 }

@@ -1,3 +1,4 @@
+use super::capacities::Capacities;
 use super::districts;
 use super::modes::{Mode, MODES};
 use super::purposes::Purpose;
@@ -7,7 +8,6 @@ use itertools::Itertools;
 use petgraph::graph::{EdgeIndex, Graph as Petgraph, NodeIndex};
 use petgraph::Direction::Outgoing;
 use std::collections::HashMap;
-use super::capacities::Capacities;
 
 pub struct Graph(Petgraph<Node, Edge>);
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
@@ -56,7 +56,11 @@ impl Graph {
             graph.add_edge(source_index, destination_index, edge_key);
         }
         graph.shrink_to_fit();
-        println!("\rBuilt graph: {} nodes, {:.2e} edges", graph.node_count(), graph.edge_count());
+        println!(
+            "\rBuilt graph: {} nodes, {:.2e} edges",
+            graph.node_count(),
+            graph.edge_count()
+        );
         Graph(graph)
     }
     pub fn node_indices(&self) -> Vec<NodeIndex> {
@@ -78,7 +82,16 @@ impl Graph {
         self.0.edge_endpoints(edge_index).unwrap().1
     }
     pub fn filter_edges(&mut self, capacities: &Capacities) {
-        self.0.filter_map(|_, node| Some(node), |_, edge| if capacities.get_trip(edge.trip) == 0 { None } else { Some(edge) });
+        self.0.filter_map(
+            |_, node| Some(node),
+            |_, edge| {
+                if capacities.get_trip(edge.trip) == 0 {
+                    None
+                } else {
+                    Some(edge)
+                }
+            },
+        );
         self.0.shrink_to_fit_edges();
     }
 }

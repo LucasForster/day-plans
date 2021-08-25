@@ -8,13 +8,11 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 const NUMBER_OF_CHUNKS: usize = 100;
-const FILTER_PARAMS: [FilterParams; 1] = [
-    FilterParams {
-        length_range: (2..6),
-        first_activity: &[Purpose::Home],
-        duration_min: 40,
-    },
-];
+const FILTER_PARAMS: [FilterParams; 1] = [FilterParams {
+    length_range: (2..6),
+    first_activity: &[Purpose::Home],
+    duration_min: 40,
+}];
 
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
@@ -25,66 +23,65 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let mut total_steps: u64 = 0;
 
     for filter_params in FILTER_PARAMS.iter() {
+        let node_indices: Vec<NodeIndex> = graph_arc
+            .node_indices()
+            .into_iter()
+            .filter(|&node_index| {
+                filter_params
+                    .first_activity
+                    .iter()
+                    .find(|&purpose| graph_arc.node(node_index).purpose.eq(purpose))
+                    .is_some()
+            })
+            .collect();
+        let chunk_size = (node_indices.len() as f64 / (NUMBER_OF_CHUNKS as f64)).ceil() as usize;
 
-    let node_indices: Vec<NodeIndex> = graph_arc
-        .node_indices()
-        .into_iter()
-        .filter(|&node_index| {
-            filter_params
-                .first_activity
-                .iter()
-                .find(|&purpose| graph_arc.node(node_index).purpose.eq(purpose))
-                .is_some()
-        })
-        .collect();
-    let chunk_size = (node_indices.len() as f64 / (NUMBER_OF_CHUNKS as f64)).ceil() as usize;
-
-    for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
-        let secs = start.elapsed().unwrap().as_secs();
-        println!(
-            "{:02}:{:02}:{:02} {:.*}% {:4} plans, {:<7.2e} steps",
-            ((secs / 60) / 60) % 60,
-            (secs / 60) % 60,
-            secs % 60,
-            ((NUMBER_OF_CHUNKS / 100) as f64).log10().ceil() as usize,
-            (100 * chunk_count) as f64 / NUMBER_OF_CHUNKS as f64,
-            plans.len(),
-            total_steps,
-        );
-
-        let (potential_paths, step_sum) = chunk
-            .par_iter()
-            .map(|&node_index| execute(graph_arc.clone(), node_index, capacities_arc.clone()))
-            .reduce(
-                || (Vec::new(), 0u64),
-                |(mut acc, sum), (mut potential_paths, steps)| {
-                    acc.append(&mut potential_paths);
-                    (acc, sum + steps)
-                },
+        for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
+            let secs = start.elapsed().unwrap().as_secs();
+            println!(
+                "{:02}:{:02}:{:02} {:.*}% {:4} plans, {:<7.2e} steps",
+                ((secs / 60) / 60) % 60,
+                (secs / 60) % 60,
+                secs % 60,
+                ((NUMBER_OF_CHUNKS / 100) as f64).log10().ceil() as usize,
+                (100 * chunk_count) as f64 / NUMBER_OF_CHUNKS as f64,
+                plans.len(),
+                total_steps,
             );
-        total_steps += step_sum;
 
-        let prev_plan_count = plans.len();
-        let mut capacities = match Arc::try_unwrap(capacities_arc) {
-            Ok(capacities) => capacities,
-            Err(_) => panic!(),
-        };
-        for potential_path in potential_paths {
-            while potential_path
-                .try_extracting(&mut capacities, &mut plans)
-                .is_ok()
-            {}
-        }
-        capacities_arc = Arc::new(capacities);
-        if plans.len() > prev_plan_count {
-            let mut graph = match Arc::try_unwrap(graph_arc) {
-                Ok(graph) => graph,
+            let (potential_paths, step_sum) = chunk
+                .par_iter()
+                .map(|&node_index| execute(graph_arc.clone(), node_index, capacities_arc.clone()))
+                .reduce(
+                    || (Vec::new(), 0u64),
+                    |(mut acc, sum), (mut potential_paths, steps)| {
+                        acc.append(&mut potential_paths);
+                        (acc, sum + steps)
+                    },
+                );
+            total_steps += step_sum;
+
+            let prev_plan_count = plans.len();
+            let mut capacities = match Arc::try_unwrap(capacities_arc) {
+                Ok(capacities) => capacities,
                 Err(_) => panic!(),
             };
-            graph.filter_edges(&capacities_arc);
-            graph_arc = Arc::new(graph);
+            for potential_path in potential_paths {
+                while potential_path
+                    .try_extracting(&mut capacities, &mut plans)
+                    .is_ok()
+                {}
+            }
+            capacities_arc = Arc::new(capacities);
+            if plans.len() > prev_plan_count {
+                let mut graph = match Arc::try_unwrap(graph_arc) {
+                    Ok(graph) => graph,
+                    Err(_) => panic!(),
+                };
+                graph.filter_edges(&capacities_arc);
+                graph_arc = Arc::new(graph);
+            }
         }
-    }
     }
     println!("Found {} plans.", plans.len());
     plans

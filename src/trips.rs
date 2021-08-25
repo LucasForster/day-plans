@@ -55,7 +55,8 @@ fn load() -> Vec<Trip> {
             );
             let records = io::read_csv(path, true, false, b' ', Some(b'C'));
             for record in records {
-                let count = (record[2].parse::<f64>().unwrap() * TRIP_COUNT_FACTOR).round() as usize;
+                let count =
+                    (record[2].parse::<f64>().unwrap() * TRIP_COUNT_FACTOR).round() as usize;
                 if count == 0 {
                     continue;
                 }

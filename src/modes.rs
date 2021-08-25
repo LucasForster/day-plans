@@ -1,6 +1,6 @@
 use super::trips::Transport;
-use std::hash::{Hash, Hasher};
 use lazy_static::lazy_static;
+use std::hash::{Hash, Hasher};
 
 pub struct Mode {
     pub index: usize,
