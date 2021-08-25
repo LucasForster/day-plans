@@ -12,6 +12,7 @@ const FILTER_PARAMS: [FilterParams; 1] = [FilterParams {
     length_range: (2, 6),
     first_activity: &[Purpose::Home],
     duration_min: 40,
+    cycle: true,
 }];
 
 pub fn search() -> Vec<Vec<(Node, Edge)>> {

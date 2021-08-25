@@ -11,6 +11,7 @@ pub struct FilterParams {
     pub length_range: (usize, usize),
     pub first_activity: &'static [Purpose],
     pub duration_min: u8,
+    pub cycle: bool,
 }
 pub struct Filter {
     params: FilterParams,
@@ -102,7 +103,7 @@ impl Filter {
         }
     }
     fn check_activity_cycle(&self, target: &Node) -> Option<bool> {
-        if target.purpose.eq(&self.nodes.first().unwrap().purpose) {
+        if !self.cycle || target.purpose.eq(&self.nodes.first().unwrap().purpose) {
             Some(true)
         } else {
             None
