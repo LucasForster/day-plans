@@ -8,12 +8,26 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 const NUMBER_OF_CHUNKS: usize = 100;
-const FILTER_PARAMS: [FilterParams; 1] = [FilterParams {
-    length_range: (2, 6),
-    first_activity: &[Purpose::Home],
-    duration_min: 40,
-    cycle: true,
-}];
+const FILTER_PARAMS: [FilterParams; 3] = [
+    FilterParams {
+        length_range: (3, 10),
+        first_activity: &[Purpose::Home],
+        duration_min: 40,
+        cycle: true,
+    },
+    FilterParams {
+        length_range: (2, 10),
+        first_activity: &[Purpose::Home],
+        duration_min: 30,
+        cycle: true,
+    },
+    FilterParams {
+        length_range: (2, 10),
+        first_activity: &[Purpose::Home,Purpose::Leisure,Purpose::School,Purpose::Service,Purpose::Shopping,Purpose::Work],
+        duration_min: 1,
+        cycle: true,
+    },
+];
 
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
