@@ -103,8 +103,8 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             let count = plans.iter().filter(|&plan| plan.len() == i).count();
             print!("{}: {} | ", i, count);
         }
+        println!("total: {}", plans.len());
     }
-    println!("total: {}", plans.len());
     plans
 }
 
