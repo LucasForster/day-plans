@@ -18,10 +18,10 @@ impl Add<Duration> for TimeBin {
 impl Sub for TimeBin {
     type Output = u8;
     fn sub(self, other: Self) -> Self::Output {
-        if other.0 > self.0 {
-            other.0 - self.0
+        if self.0 > other.0 {
+            self.0 - other.0
         } else {
-            other.0 + (COUNT as u8) - self.0
+            self.0 + (COUNT as u8) - other.0
         }
     }
 }

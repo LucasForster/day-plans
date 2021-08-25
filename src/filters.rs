@@ -69,7 +69,7 @@ impl Filter {
             };
         }
         check!(self.check_length(), "length");
-        check!(self.check_duration(target), "duration");
+        check!(self.check_duration(), "duration");
         check!(self.check_activity_cycle(target), "cycle");
         check!(self.check_trip_capacity(edge), "tripcap");
         check!(self.check_level_capacity(target, edge), "levelcap");
@@ -86,8 +86,13 @@ impl Filter {
             Some(self.nodes.len() < self.length_range.end)
         }
     }
-    fn check_duration(&self, target: &Node) -> Option<bool> {
-        let duration = target.time_bin - self.nodes.first().unwrap().time_bin;
+    fn check_duration(&self) -> Option<bool> {
+        let duration: u8 = self
+            .nodes
+            .iter()
+            .zip(self.nodes.iter().skip(1))
+            .map(|(first, second)| second.time_bin - first.time_bin)
+            .sum();
         if duration > time_bins::COUNT as u8 {
             return Some(false);
         }
