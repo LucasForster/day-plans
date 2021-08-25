@@ -103,7 +103,8 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             let count = plans.iter().filter(|&plan| plan.len() == i).count();
             print!("{}: {} | ", i, count);
         }
-        println!("total: {}", plans.len());
+        print!("total: {} |", plans.len());
+        println!("trips used: {}", plans.iter().map(|plan| plan.len()).sum::<usize>());
     }
     plans
 }
