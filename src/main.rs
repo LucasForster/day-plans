@@ -13,6 +13,6 @@ mod time_bins;
 mod trips;
 
 fn main() {
-    sankey::main();
+    // sankey::main();
     search::search();
 }
