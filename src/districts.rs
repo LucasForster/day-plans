@@ -42,14 +42,11 @@ fn load() -> Vec<District> {
         b'\t',
         None,
     );
-    let proj = proj::Proj::new_known_crs("EPSG:31466", "EPSG:4326", None).unwrap();
     let mut vec: Vec<District> = Vec::new();
     for record in records {
         let id = Id(record[0].parse().unwrap());
         assert!(vec.iter().find(|&district| district.id.0 == id.0).is_none());
-        let (x, y) = proj
-            .convert((record[1].parse().unwrap(), record[2].parse().unwrap()))
-            .unwrap();
+        let (x, y) = (record[1].parse().unwrap(), record[2].parse().unwrap());
         let info = compose_info(&record);
         vec.push(District {
             index: vec.len(),

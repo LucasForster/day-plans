@@ -12,5 +12,4 @@ itertools = "0.10.1"
 lazy_static = "1.4.0"
 petgraph = "0.5.1"
 phf = { version = "0.8.0", features = ["macros"] }
-proj = "0.22.0"
 rayon = "1.5.1"
