@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::purposes::Purpose;
 use crate::trips::TRIPS;
 
+#[allow(dead_code)]
 pub fn main() {
     let mut counts: HashMap<(Purpose, Purpose), usize> = HashMap::new();
     for trip in TRIPS.iter() {
