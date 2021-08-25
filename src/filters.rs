@@ -3,11 +3,12 @@ use super::graph::{Edge, Node};
 use super::purposes::Purpose;
 use super::time_bins;
 use itertools::Itertools;
-use std::ops::{Deref, Range};
+use std::ops::{Deref};
 use std::sync::Arc;
 
+#[derive(Clone, Copy)]
 pub struct FilterParams {
-    pub length_range: Range<usize>,
+    pub length_range: (usize, usize),
     pub first_activity: &'static [Purpose],
     pub duration_min: u8,
 }
@@ -78,10 +79,10 @@ impl Filter {
         Ok(is_valid_path)
     }
     fn check_length(&self) -> Option<bool> {
-        if self.nodes.len() < self.length_range.start {
+        if self.nodes.len() < self.length_range.0 {
             None
         } else {
-            Some(self.nodes.len() < self.length_range.end)
+            Some(self.nodes.len() < self.length_range.1)
         }
     }
     fn check_duration(&self) -> Option<bool> {

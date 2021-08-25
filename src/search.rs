@@ -9,7 +9,7 @@ use std::time::SystemTime;
 
 const NUMBER_OF_CHUNKS: usize = 100;
 const FILTER_PARAMS: [FilterParams; 1] = [FilterParams {
-    length_range: (2..6),
+    length_range: (2, 6),
     first_activity: &[Purpose::Home],
     duration_min: 40,
 }];
@@ -51,7 +51,7 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
 
             let (potential_paths, step_sum) = chunk
                 .par_iter()
-                .map(|&node_index| execute(graph_arc.clone(), node_index, capacities_arc.clone()))
+                .map(|&node_index| execute(graph_arc.clone(), node_index, capacities_arc.clone(), filter_params))
                 .reduce(
                     || (Vec::new(), 0u64),
                     |(mut acc, sum), (mut potential_paths, steps)| {
@@ -91,10 +91,11 @@ fn execute(
     graph: Arc<Graph>,
     node_index: NodeIndex,
     capacities: Arc<Capacities>,
+    filter_params: &FilterParams,
 ) -> (Vec<PotentialPath>, u64) {
     let mut plans: Vec<PotentialPath> = Vec::new();
     let mut search_steps: u64 = 0;
-    let mut filter = match Filter::new(FILTER_PARAMS, *graph.node(node_index), capacities) {
+    let mut filter = match Filter::new(*filter_params, *graph.node(node_index), capacities) {
         Ok(filter) => filter,
         Err(()) => return (plans, search_steps),
     };
