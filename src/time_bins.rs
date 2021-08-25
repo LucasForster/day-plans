@@ -21,7 +21,7 @@ impl Sub for TimeBin {
         if other.0 > self.0 {
             other.0 - self.0
         } else {
-            other.0 - self.0 + (COUNT as u8)
+            other.0 + (COUNT as u8) - self.0
         }
     }
 }
