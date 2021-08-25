@@ -8,34 +8,37 @@ use std::sync::Arc;
 use std::time::SystemTime;
 
 const NUMBER_OF_CHUNKS: usize = 100;
-const FILTER_PARAMS: FilterParams = FilterParams {
-    length_range: (2..6),
-    first_activity: &[Purpose::Home],
-    duration_min: 40,
-};
+const FILTER_PARAMS: [FilterParams; 1] = [
+    FilterParams {
+        length_range: (2..6),
+        first_activity: &[Purpose::Home],
+        duration_min: 40,
+    },
+];
 
 pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let start = SystemTime::now();
 
     let mut graph_arc = Arc::new(Graph::new());
     let mut capacities_arc = Arc::new(Capacities::new());
+    let mut plans: Vec<Vec<(Node, Edge)>> = Vec::new();
+    let mut total_steps: u64 = 0;
+
+    for filter_params in FILTER_PARAMS.iter() {
 
     let node_indices: Vec<NodeIndex> = graph_arc
         .node_indices()
         .into_iter()
         .filter(|&node_index| {
-            FILTER_PARAMS
+            filter_params
                 .first_activity
                 .iter()
                 .find(|&purpose| graph_arc.node(node_index).purpose.eq(purpose))
                 .is_some()
         })
         .collect();
-    assert!(NUMBER_OF_CHUNKS < node_indices.len());
     let chunk_size = (node_indices.len() as f64 / (NUMBER_OF_CHUNKS as f64)).ceil() as usize;
 
-    let mut plans: Vec<Vec<(Node, Edge)>> = Vec::new();
-    let mut total_steps: u64 = 0;
     for (chunk_count, chunk) in node_indices.chunks(chunk_size).enumerate() {
         let secs = start.elapsed().unwrap().as_secs();
         println!(
@@ -81,6 +84,7 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
             graph.filter_edges(&capacities_arc);
             graph_arc = Arc::new(graph);
         }
+    }
     }
     println!("Found {} plans.", plans.len());
     plans
