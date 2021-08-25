@@ -23,7 +23,8 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
     let mut plans: Vec<Vec<(Node, Edge)>> = Vec::new();
     let mut total_steps: u64 = 0;
 
-    for filter_params in FILTER_PARAMS.iter() {
+    for (filter_index, filter_params) in FILTER_PARAMS.iter().enumerate() {
+        println!("\t--- STAGE {} ---", filter_index + 1);
         let node_indices: Vec<NodeIndex> = graph_arc
             .node_indices()
             .into_iter()
@@ -83,6 +84,12 @@ pub fn search() -> Vec<Vec<(Node, Edge)>> {
                 graph_arc = Arc::new(graph);
             }
         }
+        print!("Plan lengths: ");
+        for i in 1..10 {
+            let count = plans.iter().filter(|&plan| plan.len() == i).count();
+            print!("{}: {} | ", i, count);
+        }
+        println!();
     }
     println!("Found {} plans.", plans.len());
     plans
